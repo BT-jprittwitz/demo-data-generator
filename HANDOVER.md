@@ -194,6 +194,20 @@ Der Key ist **`record.env.company.id`** — das ist **nicht** das `company_id`-F
 
 Die Generator-Engine (siehe Abschnitt 5) macht dieses Wrapping automatisch, sobald `standard_price` in der Produkt-Spezifikation gesetzt ist, und `generator/validate.py` schlägt fehl, falls ein `product.product`-Record `standard_price` ohne diesen Context enthält.
 
+### 4.8 `--test-enable` NICHT für den Installations-Smoketest (real passiert)
+
+**Beobachtetes Problem:** Der erste echte Installationslauf gegen den lokalen Docker-Kernel (`docker compose run --rm odoo odoo -i bt_demo_mfg --stop-after-init --test-enable -d test_bt_demo_mfg`) wirkte wie ein Hänger und wurde abgebrochen. Ursache: `--test-enable` führt die Test-Suites **aller** installierten Module aus, nicht nur die des angegebenen Moduls — im Log 998 base-Tests (`odoo.addons.base.tests.*`) plus `sale_mrp`-Tests, Laufzeit ~3,5 min, inkl. Dutzender `ERROR`-Zeilen aus `odoo.addons.base.tests.test_cli` (Docker-/CLI-Umgebungsartefakt). Das sind **keine** Fehler unseres Moduls.
+
+**Fix:** Für den Smoketest `--test-enable` weglassen. `bt_demo_mfg` hat selbst keine Tests. Richtig (siehe `docker/README.md`, `AGENTS.md`):
+
+```bash
+docker compose run --rm odoo odoo -i bt_demo_mfg --stop-after-init -d test_bt_demo_mfg
+```
+
+**Verifiziert (18.09.2026, Odoo 19.0-20260908):** Lauf ohne `--test-enable` → `Module bt_demo_mfg loaded in 0.29s`, exit 0, kein Traceback. Postgres-Gegenprobe: Company `Muster Foerdertechnik AG` (id 156) angelegt; `standard_price` liegt als `{"156": 38.5}` etc. (4.7-Fix wirkt); `base.user_admin` hat `company_ids = {1,156}` und aktive Company 156 (4.5-Fix wirkt); 4 `sale.order` (1 `draft`, 3 `sent`, company 156), 2 `mrp.bom`, 7 `product.product`. Wichtig: vor einem frischen Lauf die Test-DB verwerfen (`DROP DATABASE IF EXISTS test_bt_demo_mfg;`), sonst lädt Odoo nur die bestehende DB und installiert nicht neu.
+
+**Verallgemeinerte Lehre:** `--test-enable` ist ein CI-Werkzeug für die Testsuche, nicht für Installations-Smoketests. "Hängt scheinbar" zuerst gegen das Log prüfen, bevor abgebrochen wird — der Modul-Install-Teil ist daran erkennbar (`Loading module <name>`, `Module <name> loaded in ...`).
+
 ## 5. Aktueller Modul-Aufbau (Referenz: `bt_demo_mfg`, "produzierender Kunde")
 
 ```
@@ -243,7 +257,7 @@ bt_demo_mfg/
 
 ```bash
 python3 -m generator.cli generate --spec examples/muster_foerdertechnik.json --out dist
-python3 -m generator.cli validate dist/bt_demo_mfg.zip
+python3 -m generator.cli validate reference/bt_demo_mfg.zip
 ```
 
 Ablauf: JSON-Kundenspezifikation (`examples/muster_foerdertechnik.json` als Vorlage) → `generator/spec_loader.py` lädt sie in Dataclasses (`generator/model.py`, inkl. Validierung der Spezifikation selbst: unsichere `sale.order`-States, unbekannte `product.type`-Werte, doppelte Barcodes, hängende Referenzen werden mit klarer Fehlermeldung abgelehnt) → `generator/records.py` baut daraus die XML-Record-Elemente exakt nach den in Abschnitt 4 verifizierten Mustern (inkl. automatischem `allowed_company_ids`-Context-Wrapping für `standard_price`, siehe 4.7) → `generator/builder.py` schreibt Modulverzeichnis + ZIP → `generator/validate.py` prüft vor dem Ausliefern statisch (XML-Wohlgeformtheit, Manifest-Konsistenz, xmlid-Referenzen, die drei bekannten Landminen aus 4.1/4.3/4.7).
@@ -256,7 +270,7 @@ Echte Installationstests gegen einen laufenden Odoo-19.0-Kernel sind vorbereitet
 
 1. `bt_demo_example_skr04.zip` — erster PoC, an das SKR04-Beispiel des Kollegen angelehnt (8 Partner, 10 Produkte, Rechnungen). **Superseded**, Rechnungen/Buchhaltung inzwischen bewusst aus Scope genommen.
 2. `bt_demo_example_manufacturing.zip` — zweiter PoC, produzierender Kunde. **Buggy**: enthielt den `product.template` + `product.product`-Doppel-Record-Fehler (4.1) und `state='sale'`-Fehler (4.3). Nicht mehr verwenden.
-3. `bt_demo_mfg.zip` — installierbar, inkl. Company-Visibility-Fix (4.5). Erfolgreich auf `moduletesting.odoodemo4.braintec.io` installiert (Coolify-Deployment, Repo-Pfad `bt-project-template/ext/odoo_apps/bt_demo_mfg/`). **Nachträglich gefundener Bug (4.7):** alle 7 Produkte setzen `standard_price` ohne `allowed_company_ids`-Context — die Cost-Werte der 4 Komponenten (38.5/410.0/620.0/22.0) landen dadurch vermutlich gegen die falsche Company. Als historische Referenz im Repo belassen (`bt_demo_mfg.zip` im Repo-Root), aber **nicht mehr als Vorlage verwenden** — `python3 -m generator.cli validate bt_demo_mfg.zip` zeigt den Fehler.
+3. `bt_demo_mfg.zip` — installierbar, inkl. Company-Visibility-Fix (4.5). Erfolgreich auf `moduletesting.odoodemo4.braintec.io` installiert (Coolify-Deployment, Repo-Pfad `bt-project-template/ext/odoo_apps/bt_demo_mfg/`). **Nachträglich gefundener Bug (4.7):** alle 7 Produkte setzen `standard_price` ohne `allowed_company_ids`-Context — die Cost-Werte der 4 Komponenten (38.5/410.0/620.0/22.0) landen dadurch vermutlich gegen die falsche Company. Als historische Referenz im Repo belassen (`reference/bt_demo_mfg.zip`), aber **nicht mehr als Vorlage verwenden** — `python3 -m generator.cli validate reference/bt_demo_mfg.zip` zeigt den Fehler.
 4. Ab hier: Generator-Engine in diesem Repo (siehe Abschnitt 5, README.md). `examples/muster_foerdertechnik.json` reproduziert denselben Kunden wie `bt_demo_mfg.zip`, korrigiert den 4.7-Bug und ergänzt Stammdaten-Tiefe (interne Referenz, Barcode, Gewicht, Verkaufsbeschreibung) gemäss Priorität 1 (Abschnitt 8).
 
 ## 7. Referenzmaterial

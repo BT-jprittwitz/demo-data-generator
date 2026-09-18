@@ -1,31 +1,41 @@
-# Lokale/CI-Testinstallation (vorbereitet, noch nicht aktiv genutzt)
+# Lokale/CI-Testinstallation (in Benutzung, verifiziert)
 
-Status: Auf der aktuellen Entwicklungsmaschine ist kein Docker installiert. Dieses
-Setup ist vorbereitet fuer den Einsatz auf einer Maschine mit Docker (z.B. ein
-CI-Runner), damit vor jeder Auslieferung eine echte Installation gegen einen
-frischen Odoo-19.0-Kernel laufen kann - nicht nur die statische Pruefung aus
-`generator/validate.py`.
+Status: Docker ist auf der Entwicklungsmaschine verfuegbar; die Installation
+gegen einen frischen Odoo-19.0-Kernel wurde damit real durchgefuehrt und
+verifiziert (bt_demo_mfg, inkl. Postgres-Gegenprobe der Company-Context-Fixes
+4.5/4.7). `generator validate` (rein strukturell) bleibt die schnelle
+Vorabpruefung, ersetzt aber keine echte Installation.
 
-Bis dieses Setup produktiv genutzt wird, bleibt `generator validate` (rein
-strukturell, siehe dortige Docstrings fuer die Grenzen) die einzige automatische
-Pruefung. Ein echter Installationstest gegen eine erreichbare Instanz (z.B.
-`moduletesting.odoodemo4.braintec.io`, siehe HANDOVER.md 6) bleibt bis dahin
-manuell: Modul hochladen, bei Fehler den **vollstaendigen Traceback** anfordern
-(harte Arbeitsregel, HANDOVER.md Abschnitt 3), erst dann fixen.
-
-## Vorgesehener Ablauf, sobald Docker verfuegbar ist
+## Ablauf
 
 ```bash
 python3 -m generator.cli generate --spec examples/muster_foerdertechnik.json --out dist
 cd docker
+# frische Test-DB erzwingen, sonst wird nur die bestehende geladen:
+docker compose exec -T db psql -U odoo -d postgres -c "DROP DATABASE IF EXISTS test_bt_demo_mfg;"
 docker compose run --rm odoo \
-    odoo -i bt_demo_mfg --stop-after-init --test-enable -d test_bt_demo_mfg
+    odoo -i bt_demo_mfg --stop-after-init -d test_bt_demo_mfg
 ```
 
 Exit-Code und Log pruefen: ein Traceback im Log bedeutet Installationsfehler.
 `--stop-after-init` verhindert, dass der Odoo-Server nach der Installation
 weiterlaeuft (der Container soll nur den Installationslauf durchfuehren und
 terminieren).
+
+Wichtig: **kein** `--test-enable` bei diesem Smoketest verwenden - es fuehrt die
+Tests *aller* Module aus (998 base-Tests etc., ~3,5 min, viele irrelevante
+`ERROR`-Zeilen aus `base.tests.test_cli`) und sieht dann wie ein Haenger aus.
+`bt_demo_mfg` hat keine eigenen Tests. Siehe auch [AGENTS.md](../AGENTS.md).
+
+Verifikation nicht nur am Log, sondern direkt gegen Postgres, z.B.:
+
+```bash
+docker compose exec -T db psql -U odoo -d test_bt_demo_mfg \
+    -c "SELECT id, default_code, standard_price FROM product_product;"
+```
+
+`standard_price` muss als `{"<demo_company_id>": <wert>}` vorliegen (Company-
+Context-Fix 4.7), nicht gegen die Installations-Company.
 
 ## Naechster Schritt, um das produktiv zu machen
 

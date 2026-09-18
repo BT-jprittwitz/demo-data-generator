@@ -20,7 +20,7 @@ es trotzdem, nicht empfohlen).
 Ein bestehendes Modul (Verzeichnis oder ZIP) unabhaengig pruefen:
 
 ```bash
-python3 -m generator.cli validate dist/bt_demo_mfg.zip
+python3 -m generator.cli validate reference/bt_demo_mfg.zip
 ```
 
 ## Eine neue Kunden-Spezifikation schreiben
@@ -52,9 +52,10 @@ generator/
   cli.py            CLI (generate / validate)
 examples/
   muster_foerdertechnik.json   Beispiel-Spezifikation (produzierender Kunde)
-tests/                          Tests fuer die Engine selbst (kein Odoo noetig)
-docker/                         Vorbereitung fuer echte Installationstests (siehe dortige README)
-bt_demo_mfg.zip                 Historisches Referenzmodul (Wegwerf-Skript-Ära, siehe HANDOVER.md 6)
+  tests/                          Tests fuer die Engine selbst (kein Odoo noetig)
+  docker/                         Community-Installations-Smoketest (siehe dortige README)
+  reference/                      Historische Referenzmodule (nicht mehr Vorlage, siehe HANDOVER.md 6)
+    bt_demo_mfg.zip
 ```
 
 ## Bekannte Grenze

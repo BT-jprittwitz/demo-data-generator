@@ -1,8 +1,8 @@
 # Lokale Testinstanz fuer die automatische Installationspruefung vor Auslieferung.
 #
-# Status: vorbereitet, aber auf der aktuellen Entwicklungsmaschine NICHT lauffaehig
-# (kein Docker installiert). Gedacht fuer den Einsatz auf einer Maschine mit
-# Docker (z.B. CI-Runner) - siehe docker/README.md fuer den vorgesehenen Ablauf.
+# Status: in Benutzung und verifiziert (Docker auf der Entwicklungsmaschine
+# verfuegbar). Ablauf siehe docker/README.md und AGENTS.md - kein --test-enable
+# beim Installations-Smoketest.
 #
 # Odoo-Version bewusst auf 19.0 gepinnt, passend zur Zielversion aus HANDOVER.md.
 services:
@@ -23,8 +23,12 @@ services:
       HOST: db
       USER: odoo
       PASSWORD: odoo
+    ports:
+      - "8069:8069"
     volumes:
       - ../dist:/mnt/extra-addons
+      - odoo-data:/var/lib/odoo
 
 volumes:
   odoo-db-data:
+  odoo-data:
