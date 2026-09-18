@@ -1,0 +1,194 @@
+{
+  "module": {
+    "technical_name": "bt_demo_mfg",
+    "title": "Demo Data - Produzierender Kunde (Company, Stueckliste, Angebote, Auftraege)",
+    "category": "Manufacturing",
+    "summary": "Proof-of-concept: eigene Company, Kontakte, Produkte, Stuecklisten, Angebotsvorlage, Beispielauftraege",
+    "description": "Beispielhaftes Demo-Datenmodul fuer einen produzierenden Kunden: 1 neue Company (Kundenname, Adresse) - alle Daten sind darauf geschluesselt; 3 Kontakte; 7 Produkte (4 Komponenten, 2 Fertigprodukte, 1 Dienstleistung) mit Kosten, interner Referenz und Gewicht; 2 Stuecklisten fuer die Fertigprodukte; 1 Angebotsvorlage; 3 Beispiel-Verkaufsauftraege."
+  },
+  "company": {
+    "xml_id": "demo_company",
+    "name": "Muster Foerdertechnik AG",
+    "street": "Werkstrasse 3",
+    "city": "St. Gallen",
+    "zip": "9000",
+    "country_xmlid": "base.ch",
+    "vat": "CHE-100.200.300",
+    "currency_xmlid": "base.CHF"
+  },
+  "partners": [
+    {
+      "xml_id": "partner_1",
+      "name": "Grueninger Foerdertechnik AG",
+      "country_xmlid": "base.ch",
+      "vat": "CHE-111.222.333",
+      "street": "Werkstrasse 3",
+      "city": "St. Gallen",
+      "zip": "9000"
+    },
+    {
+      "xml_id": "partner_2",
+      "name": "Baumann Anlagenbau GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE311445566",
+      "street": "Industriering 8",
+      "city": "Augsburg",
+      "zip": "86150"
+    },
+    {
+      "xml_id": "partner_3",
+      "name": "Lefebvre Machines SA",
+      "country_xmlid": "base.fr",
+      "vat": "FR55667788990",
+      "street": "Zone Industrielle 2",
+      "city": "Mulhouse",
+      "zip": "68100"
+    }
+  ],
+  "products": [
+    {
+      "xml_id": "product_comp_steel",
+      "name": "Stahlrohr 40x40mm (6m)",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 38.5,
+      "default_code": "COMP-STEEL-4040",
+      "barcode": "7610000000011",
+      "weight": 14.2
+    },
+    {
+      "xml_id": "product_comp_motor",
+      "name": "Elektromotor 3-Phasen 5.5kW",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 410.0,
+      "default_code": "COMP-MOTOR-55KW",
+      "barcode": "7610000000028",
+      "weight": 38.0
+    },
+    {
+      "xml_id": "product_comp_ctrl",
+      "name": "Steuerungseinheit SPS-X200",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 620.0,
+      "default_code": "COMP-CTRL-X200",
+      "barcode": "7610000000035",
+      "weight": 3.5
+    },
+    {
+      "xml_id": "product_comp_screws",
+      "name": "Schraubensatz DIN933 (100 Stk)",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 22.0,
+      "default_code": "COMP-SCREWS-DIN933",
+      "barcode": "7610000000042",
+      "weight": 1.8
+    },
+    {
+      "xml_id": "product_fin_conveyor",
+      "name": "Foerderbandanlage FB-2000",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 18500.0,
+      "standard_price": 7850.0,
+      "default_code": "FIN-CONVEYOR-FB2000",
+      "barcode": "7610000000059",
+      "weight": 640.0,
+      "description_sale": "Foerderbandanlage FB-2000, inkl. Rahmenkonstruktion, Antrieb und Steuerung, werksseitig vormontiert."
+    },
+    {
+      "xml_id": "product_fin_press",
+      "name": "Hydraulikpresse HP-500",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 27900.0,
+      "standard_price": 12400.0,
+      "default_code": "FIN-PRESS-HP500",
+      "barcode": "7610000000066",
+      "weight": 980.0,
+      "description_sale": "Hydraulikpresse HP-500, Presskraft 500 kN, inkl. Sicherheitsverkleidung."
+    },
+    {
+      "xml_id": "product_svc_install",
+      "name": "Inbetriebnahme und Einweisung vor Ort",
+      "type": "service",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 1450.0,
+      "default_code": "SVC-INSTALL"
+    }
+  ],
+  "boms": [
+    {
+      "xml_id": "bom_fin_conveyor",
+      "product_xmlid": "product_fin_conveyor",
+      "lines": [
+        {"product_xmlid": "product_comp_steel", "qty": 6.0},
+        {"product_xmlid": "product_comp_motor", "qty": 1.0},
+        {"product_xmlid": "product_comp_screws", "qty": 2.0}
+      ]
+    },
+    {
+      "xml_id": "bom_fin_press",
+      "product_xmlid": "product_fin_press",
+      "lines": [
+        {"product_xmlid": "product_comp_steel", "qty": 3.0},
+        {"product_xmlid": "product_comp_motor", "qty": 2.0},
+        {"product_xmlid": "product_comp_ctrl", "qty": 1.0},
+        {"product_xmlid": "product_comp_screws", "qty": 4.0}
+      ]
+    }
+  ],
+  "quotation": {
+    "xml_id": "quotation_template_example",
+    "partner_xmlid": "partner_1",
+    "state": "draft",
+    "lines": [
+      {"product_xmlid": "product_fin_conveyor", "qty": 1.0, "description": "Foerderbandanlage FB-2000, inkl. Rahmenkonstruktion, Antrieb und Steuerung, werksseitig vormontiert"},
+      {"product_xmlid": "product_fin_press", "qty": 1.0, "description": "Hydraulikpresse HP-500, Presskraft 500 kN, inkl. Sicherheitsverkleidung"},
+      {"product_xmlid": "product_svc_install", "qty": 1.0, "description": "Inbetriebnahme und Einweisung des Bedienpersonals vor Ort (1 Tag)"}
+    ]
+  },
+  "example_orders": [
+    {
+      "xml_id": "sale_order_example_1",
+      "partner_xmlid": "partner_1",
+      "state": "sent",
+      "date_order": "2025-03-01",
+      "lines": [
+        {"product_xmlid": "product_fin_conveyor", "qty": 1.0, "description": "Foerderbandanlage FB-2000"}
+      ]
+    },
+    {
+      "xml_id": "sale_order_example_2",
+      "partner_xmlid": "partner_2",
+      "state": "sent",
+      "date_order": "2025-03-21",
+      "lines": [
+        {"product_xmlid": "product_fin_press", "qty": 1.0, "description": "Hydraulikpresse HP-500"},
+        {"product_xmlid": "product_svc_install", "qty": 1.0, "description": "Inbetriebnahme und Einweisung vor Ort"}
+      ]
+    },
+    {
+      "xml_id": "sale_order_example_3",
+      "partner_xmlid": "partner_3",
+      "state": "sent",
+      "date_order": "2025-04-15",
+      "lines": [
+        {"product_xmlid": "product_comp_motor", "qty": 4.0, "description": "Elektromotor 3-Phasen 5.5kW (Ersatzteile)"}
+      ]
+    }
+  ]
+}

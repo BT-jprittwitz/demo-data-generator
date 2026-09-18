@@ -1,6 +1,8 @@
 # Odoo Demo-Daten-Generator — Kontext & Handover
 
-Stand: 18.09.2026. Zweck dieses Dokuments: gesamten Kontext, verifizierte technische Learnings und aktuellen Aufbau festhalten, damit unabhängig vom genutzten Tool (Cowork, Claude Code, o.a.) nahtlos weitergearbeitet werden kann.
+Stand: 18.09.2026 (Engine-Aufbau in Claude Code ergänzt, siehe Abschnitt 5/6/8). Zweck dieses Dokuments: gesamten Kontext, verifizierte technische Learnings und aktuellen Aufbau festhalten, damit unabhängig vom genutzten Tool (Cowork, Claude Code, o.a.) nahtlos weitergearbeitet werden kann.
+
+Dieses Dokument liegt jetzt in einem Git-Repo (siehe [README.md](README.md) für die Engine selbst). Frühere Kopien dieses Dokuments hiessen `odoo-demo-data-generator.md` — gleicher Inhalt, hier unter dem kanonischen Namen `HANDOVER.md` weitergeführt.
 
 ## 1. Ziel
 
@@ -164,6 +166,34 @@ Versuch, per Odoo Server Action (Execute Python Code) eine Datei serverseitig zu
 
 → Für Zugriff auf Deployment-Dateien/-Logs den Weg über die Coolify-Konsole/Terminal nehmen, nicht über Odoo Server Actions.
 
+### 4.7 `standard_price` ist `company_dependent` — braucht expliziten `allowed_company_ids`-Context (kritischer, real vorhandener Bug im bisherigen `bt_demo_mfg.zip`)
+
+**Verifiziert gegen `odoo/orm/fields.py`** (Branch 19.0 — in 19.0 liegt die Field-Basisklasse unter `odoo/orm/fields.py`, nicht mehr unter dem alten Top-Level-`odoo/fields.py`; `odoo/fields/__init__.py` re-exportiert nur noch): `product.product.standard_price` ist `company_dependent=True` (`odoo/addons/product/models/product_product.py`). Company-dependent Felder werden nicht mehr über `ir.property` gespeichert, sondern direkt als `jsonb`-Spalte, keyed per Company-ID. Entscheidend, `convert_to_column_insert()`:
+
+```python
+return PsycopgJson({record.env.company.id: value})
+```
+
+Der Key ist **`record.env.company.id`** — das ist **nicht** das `company_id`-Feld, das man auf dem Record selbst setzt, sondern die *aktuell aktive Company der Umgebung*, in der der `create()`-Call läuft. `env.company` (verifiziert gegen `odoo/orm/environments.py`) fällt ohne `allowed_company_ids`-Context-Key auf `self.user.company_id` zurück — beim Laden von Demo-XML also auf die Company der ausführenden Installationsumgebung, **nicht** auf die neu angelegte Demo-Company.
+
+**Fehler, den das verursacht:** `<field name="standard_price">38.5</field>` auf einem `product.product`-Record ohne weiteren Kontext speichert `38.5` gegen die *falsche* Company. Beim Betrachten des Produkts unter der neuen Demo-Company (nach dem Company-Visibility-Fix aus 4.5!) erscheint der Cost-Wert als nicht gesetzt/Fallback — der Wert scheint zu "verschwinden", obwohl der Insert fehlerfrei durchlief. **Das bisher ausgelieferte `bt_demo_mfg.zip` hat diesen Bug** (alle 7 Produkte setzen `standard_price` ohne Context) — ist nie aufgefallen, weil 4 der 7 Produkte `standard_price=0.0` gesetzt hatten (Zufallstreffer mit dem Fallback-Wert) und die übrigen 3 (Fertigprodukte/Service) ebenfalls `0.0`. Erst mit *echten* Kosten-Werten (Priorität 1, s. Abschnitt 8) wird der Bug sichtbar.
+
+**Fix, verifiziert gegen `odoo/tools/convert.py`:** Ein `context="..."`-Attribut direkt auf dem `<record>`-Tag wird von `xml_import.get_env()` ausgewertet (inkl. `ref()` im `safe_eval`-Kontext) und auf die für diesen Record verwendete `env` angewendet, *bevor* `create()` aufgerufen wird:
+
+```xml
+<record id="product_comp_steel" model="product.product"
+        context="{'allowed_company_ids': [ref('demo_company')]}">
+    <field name="standard_price">38.5</field>
+    ...
+</record>
+```
+
+`env.company` liest `allowed_company_ids` ohne Sudo-Check (`env.company`-Docstring: *"No sanity checks applied in sudo mode"*) — die Demo-XML-Ladeumgebung läuft mit Sudo, also kein `AccessError`, obwohl die neue Company zu diesem Zeitpunkt noch nicht in `company_ids` des installierenden Users steht.
+
+**Verallgemeinerte Lehre:** Jedes `company_dependent=True`-Feld (nicht nur `standard_price` — z.B. potenziell Steuer-/Pricing-bezogene Felder in anderen Modulen) muss beim Setzen in Demo-XML mit `context="{'allowed_company_ids': [ref('<company_xmlid>')]}"` auf dem `<record>` gewrappt werden, sonst landet der Wert gegen die falsche Company. `list_price` (auf `product.template`) ist **nicht** company_dependent — dort ist kein Wrapping nötig (verifiziert: plain `fields.Float`, kein `company_dependent`-Flag).
+
+Die Generator-Engine (siehe Abschnitt 5) macht dieses Wrapping automatisch, sobald `standard_price` in der Produkt-Spezifikation gesetzt ist, und `generator/validate.py` schlägt fehl, falls ein `product.product`-Record `standard_price` ohne diesen Context enthält.
+
 ## 5. Aktueller Modul-Aufbau (Referenz: `bt_demo_mfg`, "produzierender Kunde")
 
 ```
@@ -209,24 +239,40 @@ bt_demo_mfg/
 }
 ```
 
-Das Modul wird über ein Python-Generator-Skript gebaut (aktuell: einmaliges Skript pro Iteration, kein wiederverwendbares CLI — siehe Abschnitt 7, "nächste Schritte"). Muster: Listen von Tupeln (Produkte, Partner, BOM-Zeilen, Order-Zeilen) → f-strings zu XML zusammensetzen → Dateien schreiben → zippen.
+**Update (Engine-Aufbau, siehe README.md):** Das Modul wird nicht mehr über ein Wegwerf-Skript pro Iteration gebaut, sondern über eine wiederverwendbare Generator-Engine in diesem Repo (`generator/`, reines Python-Stdlib, kein `pip install` nötig):
+
+```bash
+python3 -m generator.cli generate --spec examples/muster_foerdertechnik.json --out dist
+python3 -m generator.cli validate dist/bt_demo_mfg.zip
+```
+
+Ablauf: JSON-Kundenspezifikation (`examples/muster_foerdertechnik.json` als Vorlage) → `generator/spec_loader.py` lädt sie in Dataclasses (`generator/model.py`, inkl. Validierung der Spezifikation selbst: unsichere `sale.order`-States, unbekannte `product.type`-Werte, doppelte Barcodes, hängende Referenzen werden mit klarer Fehlermeldung abgelehnt) → `generator/records.py` baut daraus die XML-Record-Elemente exakt nach den in Abschnitt 4 verifizierten Mustern (inkl. automatischem `allowed_company_ids`-Context-Wrapping für `standard_price`, siehe 4.7) → `generator/builder.py` schreibt Modulverzeichnis + ZIP → `generator/validate.py` prüft vor dem Ausliefern statisch (XML-Wohlgeformtheit, Manifest-Konsistenz, xmlid-Referenzen, die drei bekannten Landminen aus 4.1/4.3/4.7).
+
+Deckt bewusst nur die hier in Abschnitt 4 verifizierten Objektarten ab (`res.company`, `res.partner`, `product.product`, `mrp.bom`, `sale.order`) — kein Baustein für weitere Objektarten, solange kein konkreter Kunde das braucht (siehe Abschnitt 8).
+
+Echte Installationstests gegen einen laufenden Odoo-19.0-Kernel sind vorbereitet (`docker/`), auf der Entwicklungsmaschine aber mangels Docker noch nicht ausführbar — siehe `docker/README.md` für den vorgesehenen Ablauf, sobald eine Maschine mit Docker (z.B. CI-Runner) zur Verfügung steht. Bis dahin bleibt eine echte Installation manuell (Upload + vollständiger Traceback bei Fehlern, harte Arbeitsregel Abschnitt 3).
 
 ## 6. Historie der gelieferten Module
 
 1. `bt_demo_example_skr04.zip` — erster PoC, an das SKR04-Beispiel des Kollegen angelehnt (8 Partner, 10 Produkte, Rechnungen). **Superseded**, Rechnungen/Buchhaltung inzwischen bewusst aus Scope genommen.
 2. `bt_demo_example_manufacturing.zip` — zweiter PoC, produzierender Kunde. **Buggy**: enthielt den `product.template` + `product.product`-Doppel-Record-Fehler (4.1) und `state='sale'`-Fehler (4.3). Nicht mehr verwenden.
-3. `bt_demo_mfg.zip` — **aktuell, funktionierend, inkl. Company-Visibility-Fix (4.5)**. Erfolgreich auf `moduletesting.odoodemo4.braintec.io` installiert (Coolify-Deployment, Repo-Pfad `bt-project-template/ext/odoo_apps/bt_demo_mfg/`).
+3. `bt_demo_mfg.zip` — installierbar, inkl. Company-Visibility-Fix (4.5). Erfolgreich auf `moduletesting.odoodemo4.braintec.io` installiert (Coolify-Deployment, Repo-Pfad `bt-project-template/ext/odoo_apps/bt_demo_mfg/`). **Nachträglich gefundener Bug (4.7):** alle 7 Produkte setzen `standard_price` ohne `allowed_company_ids`-Context — die Cost-Werte der 4 Komponenten (38.5/410.0/620.0/22.0) landen dadurch vermutlich gegen die falsche Company. Als historische Referenz im Repo belassen (`bt_demo_mfg.zip` im Repo-Root), aber **nicht mehr als Vorlage verwenden** — `python3 -m generator.cli validate bt_demo_mfg.zip` zeigt den Fehler.
+4. Ab hier: Generator-Engine in diesem Repo (siehe Abschnitt 5, README.md). `examples/muster_foerdertechnik.json` reproduziert denselben Kunden wie `bt_demo_mfg.zip`, korrigiert den 4.7-Bug und ergänzt Stammdaten-Tiefe (interne Referenz, Barcode, Gewicht, Verkaufsbeschreibung) gemäss Priorität 1 (Abschnitt 8).
 
 ## 7. Referenzmaterial
 
 Als Vorbild diente ein Modul eines Kollegen (Felix Schubert) für DE-Buchhaltungs-Demodaten (SKR04-Kontenrahmen): `demo_v19_data_skr04_clean/` (45 Partner, Rechnungen) und `l10n_de_skr04_demo_assets_loans/` (Anlagen/Darlehen). Nur als Strukturvorbild verwendet, nicht verändert oder wiederverwendet — der aktuelle Ansatz lässt Buchhaltungsdaten bewusst aussen vor (siehe Abschnitt 1).
 
-## 8. Offene Roadmap-Punkte (noch nicht gebaut)
+## 8. Priorisierung & offene Roadmap-Punkte
+
+**Priorität 1 (erledigt, siehe Abschnitt 5):** Stammdaten-Tiefe der bestehenden Produkte — Kosten (`standard_price`, korrekt mit Company-Context, siehe 4.7), interne Referenz (`default_code`), sowie Barcode, Gewicht (`weight`), Volumen (`volume`) und Verkaufsbeschreibung (`description_sale`) als weitere verifizierte, optionale Felder in `generator/model.py`. Bewusst **keine** neuen Objektarten dafür (kein `product.category`, keine neuen Record-Typen) — "bedarfsgetriebenes Wachstum": ein Baustein für eine Objektart entsteht erst, wenn ein konkreter Kunde ihn braucht, nicht auf Vorrat.
+
+**Noch offen / nicht gebaut:**
 
 - **Web-Recherche-Automatik:** Aus einem Kundennamen automatisch Branche/Grösse/Geschäftsmodell ableiten und daraus das passende Demo-Datenprofil bestimmen (SaaS → Subscriptions/Wartung; produzierend → Stücklisten/Equipment; weitere Archetypen nach Bedarf).
 - **Multi-User-Sichtbarkeit:** `post_init_hook` ggf. auf mehrere/alle relevanten User statt nur `base.user_admin` ausweiten, falls Demo-Instanzen mit mehreren Logins getestet werden.
-- **Generator als wiederverwendbares Tool statt Einweg-Skript:** aktuell wird pro Iteration ein Python-Skript neu geschrieben/angepasst. Sinnvoll wäre eine Bibliothek/CLI mit: Produktarchetypen als Bausteine (Komponente/Fertigprodukt/Service/Subscription), Partner-Generatoren pro Land, eine Test-Installation gegen eine lokale/CI-Odoo-Instanz **vor** Auslieferung (siehe Abschnitt 9).
-- **SaaS-Archetyp** (Subscriptions, Wartungsprodukte) ist bisher nur konzeptionell benannt, nicht umgesetzt — nur der produzierende Archetyp (BOM/Equipment) wurde gebaut.
+- **Echte Installationstests vor Auslieferung:** `docker/` ist vorbereitet (Odoo 19.0 + Postgres via docker-compose), aber auf der Entwicklungsmaschine mangels Docker nicht ausführbar. Nächster Schritt, sobald eine Maschine mit Docker verfügbar ist: das in `docker/README.md` skizzierte `test_install.py`-Skript, das die Installation automatisiert und bei Fehlern den vollständigen Traceback liefert.
+- **SaaS-Archetyp** (Subscriptions, Wartungsprodukte) ist bisher nur konzeptionell benannt, nicht umgesetzt — nur der produzierende Archetyp (BOM/Equipment) wurde gebaut. Nicht vorbauen, bis ein SaaS-Kunde ansteht (bedarfsgetriebenes Wachstum).
 
 ## 9. Einschätzung: Cowork vs. Claude Code für die nächsten Iterationen
 
@@ -238,3 +284,5 @@ Als Vorbild diente ein Modul eines Kollegen (Felix Schubert) für DE-Buchhaltung
 **Dagegen spricht:** Julius' eigentliche Rolle ist Business Development, nicht Engineering. Sein explizites Ziel ist minimale Friktion — "ich gebe den Kundennamen, fertig". Ein CLI-/Git-Tool persönlich zu bedienen widerspricht diesem Ziel eher, als es zu unterstützen. Ausserdem: lokale Maschine möglichst meiden (bestehende Präferenz) — ein containerisierter/entfernter Claude-Code-Einsatz wäre nötig, kein lokales Setup.
 
 **Empfehlung:** Zweiteilung. Die Generator-Engine (Repo, Templates, Testautomatisierung gegen eine echte Odoo-Instanz) gehört in einen richtigen Git-Workflow — das ist eher etwas für Felix oder einen anderen Entwickler, ggf. mit Claude Code betrieben, mit diesem Dokument als Ausgangspunkt. Julius' eigene Interaktion sollte weiterhin ein einfacher Skill-Aufruf in Cowork bleiben ("generiere Demo-Paket für Kunde X"), der intern auf diese Engine zugreift oder deren Ausgabe reproduziert. Das entspricht auch der Roadmap-Anforderung aus Abschnitt 1 direkt.
+
+**Update:** Diese Empfehlung wurde umgesetzt — die Engine liegt jetzt in diesem Git-Repo (siehe README.md), aufgebaut in Claude Code auf Basis dieses Dokuments. Julius' eigene Interaktion (Skill-Aufruf in Cowork o.ä.) ist weiterhin ein separater, noch offener Schritt (siehe Abschnitt 8, "Web-Recherche-Automatik" als Voraussetzung dafür).
