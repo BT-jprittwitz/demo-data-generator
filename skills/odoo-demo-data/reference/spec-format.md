@@ -79,6 +79,14 @@ Without `chart_template` no chart of accounts is loaded; invoices need it.
 optional `uom_xmlid` (default `uom.product_uom_unit`); optional `qty`/`uom_xmlid`
 on the BOM itself.
 
+## `manufacturing_orders[]` (manufacturing customer)
+
+`xml_id`, `product_xmlid`, `qty` (> 0) (required); optional `bom_xmlid` (else
+computed from the product), `date_start`. Created as `draft`; `state` is computed
+in Odoo and never set. Requires `boms` and forces the demo `stock.warehouse`
+(the manufacturing operation type provides `picking_type_id`). Manufacturing
+implies inventory, never the reverse. See verified-patterns 4.17.
+
 ## `crm_leads[]`
 
 `xml_id`, `name` (required); `type` default `opportunity`; `partner_xmlid`,

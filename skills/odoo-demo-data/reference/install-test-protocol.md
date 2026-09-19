@@ -12,10 +12,32 @@ installation. Install against a real kernel before every delivery.
 - Do not check the log only, but directly against Postgres.
 - On error: read the complete traceback, then fix.
 
-## Variant A: Enterprise (target for multi-app demos)
+## Automated smoke test (recommended)
+
+`engine/docker/test_install.py` (stdlib only) automates all of the above: fresh
+(uniquely named) DB per run, install, log analysis (`Traceback`/`CRITICAL` and the
+`Module <name> loaded` marker), full log on failure, DB dropped on success. Success
+= exit 0; failure = exit 1 with the complete log; preflight problem = exit 2.
+
+It targets the local Enterprise instance `../odoodemo-local` (compose service
+`web`) by default:
+
+```bash
+python3 -m engine.cli generate --spec examples/<customer>.json --out output
+python3 engine/docker/test_install.py --module <technical_name>
+```
+
+Useful flags: `--log <path>` (write the full log), `--keep-db` (keep the DB even
+on success), `--verbose` (always print the log), `--timeout <s>`, and
+`--compose-dir` / `--service` for a different instance. If `--module` is omitted
+and exactly one `.zip` is in `./output`, that module is used.
+
+## Enterprise (the only supporting setup)
 
 Prerequisite: local setup `../odoodemo-local` (Odoo 19.0 Enterprise trial via
-Docker, mounts `../Demo Daten/dist` as `/mnt/extra-addons`).
+Docker, mounts `<this repo>/output` as `/mnt/extra-addons`). There is no Community
+setup; Enterprise modules (e.g. `helpdesk`, `account_accountant`) are always
+available.
 
 ```bash
 cd ../odoodemo-local
@@ -30,16 +52,6 @@ grep -nE "Traceback|CRITICAL|Module <technical_name> loaded" /tmp/<name>_install
 After installing into a *running* trial DB (`odoodemo_trial`), restart the server
 so the UI sees the module/company:
 `docker compose restart web` (then `http://localhost:8069`).
-
-## Variant B: Community (only Community-compatible specs)
-
-```bash
-cd engine/docker
-docker compose exec -T db psql -U odoo -d postgres -c "DROP DATABASE IF EXISTS test_<name>;"
-docker compose run --rm odoo odoo -i <technical_name> --stop-after-init -d test_<name>
-```
-Enterprise modules (e.g. `helpdesk`, `account_accountant`) are not available
-here — test such specs with variant A only.
 
 ## Postgres cross-check (examples)
 

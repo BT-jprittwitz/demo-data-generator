@@ -1,19 +1,41 @@
-# Local/CI test installation (in use, verified)
+# Installation smoke test against the local Enterprise instance
 
-Status: Docker is available on the development machine; installation against a
-fresh Odoo 19.0 kernel was really performed and verified with it (bt_demo_mfg,
-incl. Postgres cross-check of the company-context fixes 4.5/4.7). `engine validate`
-(purely structural) remains the quick pre-check, but does not replace a real
+Generated modules are tested against the local Odoo 19 Enterprise (trial)
+instance in `../odoodemo-local` (Docker). This repo ships **no Community setup**.
+
+Status: the procedure is in use and verified (bt_demo_mfg, incl. the Postgres
+cross-check of the company-context fixes 4.5/4.7). `engine validate` (purely
+structural) remains the quick pre-check, but does not replace a real
 installation.
+
+## Prerequisite
+
+The Enterprise instance must be running; it mounts this repo's `output/` as
+`/mnt/extra-addons`:
+
+```bash
+docker compose -f ../odoodemo-local/docker-compose.yml up -d
+```
 
 ## Procedure
 
+Automated (recommended) - `test_install.py` uses a fresh DB, analyses the log and
+returns the complete log on failure. It targets `../odoodemo-local` (compose
+service `web`) by default:
+
 ```bash
-python3 -m engine.cli generate --spec examples/muster_foerdertechnik.json --out dist
-cd engine/docker
+python3 -m engine.cli generate --spec examples/muster_foerdertechnik.json --out output
+python3 engine/docker/test_install.py --module bt_demo_mfg
+```
+
+Manual alternative (run from the repo root):
+
+```bash
+python3 -m engine.cli generate --spec examples/muster_foerdertechnik.json --out output
+cd ../odoodemo-local
 # force a fresh test DB, otherwise only the existing one is loaded:
 docker compose exec -T db psql -U odoo -d postgres -c "DROP DATABASE IF EXISTS test_bt_demo_mfg;"
-docker compose run --rm odoo \
+docker compose run --rm web \
     odoo -i bt_demo_mfg --stop-after-init -d test_bt_demo_mfg
 ```
 
@@ -37,14 +59,10 @@ docker compose exec -T db psql -U odoo -d test_bt_demo_mfg \
 `standard_price` must be present as `{"<demo_company_id>": <value>}` (company-
 context fix 4.7), not against the installation company.
 
-## Next step to make this productive
+## Automated smoke test (`test_install.py`)
 
-A small `test_install.py` script (not built yet) that:
-1. starts `docker compose run` with a fresh DB per run,
-2. scans stdout/stderr for `Traceback` / `CRITICAL` / `ERROR`,
-3. on a hit returns the complete log instead of just "installation failed",
-4. on success drops the DB again (`docker compose down -v` or a
-   throwaway DB per run).
-
-Do not build it in advance as long as nobody can actually run it - see
-"demand-driven growth" in [ROADMAP.md](../../ROADMAP.md).
+`test_install.py` (stdlib only) starts `docker compose run` against a fresh,
+uniquely named DB, scans the log for `Traceback` / `CRITICAL` and the
+`Module <name> loaded` marker, prints the complete log on failure, and drops the
+DB on success. Defaults: `--compose-dir ../odoodemo-local`, `--service web`
+(override both for a different instance).

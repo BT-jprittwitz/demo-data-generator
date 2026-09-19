@@ -113,6 +113,13 @@ def validate_module(module_dir: Path) -> list[Finding]:
             "a new company does not get a warehouse automatically "
             "(reference/verified-patterns.md 4.13)."
         ))
+    if "mrp.production" in models_present and "stock.warehouse" not in models_present:
+        findings.append(Finding(
+            "error",
+            "mrp.production records present, but no stock.warehouse for the demo company - "
+            "picking_type_id is required and computed from the company warehouse's "
+            "manufacturing operation type (reference/verified-patterns.md 4.17)."
+        ))
 
     return findings
 

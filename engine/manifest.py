@@ -11,6 +11,14 @@ AUTHOR = "braintec"
 WEBSITE = "https://www.braintec.com"
 LICENSE = "LGPL-3"
 
+# Login/password of the auto-created demo user (name = company, same groups as
+# base.user_admin). Fixed by design: after a demo appointment the customer can
+# log in immediately without a manual user setup step. If the login already
+# exists in the target DB, creation is skipped instead of aborting the install
+# (res.users has UNIQUE(login), verified-patterns.md 4.18).
+DEMO_USER_LOGIN = "demo"
+DEMO_USER_PASSWORD = "demo"
+
 
 def data_files(spec: CustomerSpec) -> list[str]:
     files = ["data/res_company_data.xml"]
@@ -34,6 +42,8 @@ def data_files(spec: CustomerSpec) -> list[str]:
         files.append("data/purchase_order_data.xml")
     if spec.stock_quants:
         files.append("data/stock_quant_data.xml")
+    if spec.manufacturing_orders:
+        files.append("data/mrp_production_data.xml")
     if spec.invoices:
         files.append("data/account_move_data.xml")
     if spec.helpdesk_tickets:
@@ -53,9 +63,11 @@ def depends(spec: CustomerSpec) -> list[str]:
         deps.append("crm")
     if spec.needs_purchase:
         deps.append("purchase")
-    # Purchase needs stock (purchase_stock: picking_type_id) - see
-    # engine/model.py needs_warehouse.
-    if spec.needs_purchase or spec.needs_stock:
+    # Purchase needs stock (purchase_stock: picking_type_id), stock needs it for
+    # quants, manufacturing needs it for the warehouse operation type - see
+    # engine/model.py needs_warehouse (dependency is one-sided: warehouse never
+    # implies manufacturing).
+    if spec.needs_warehouse:
         deps.append("stock")
     if spec.needs_account:
         deps.append("account")
@@ -106,7 +118,7 @@ def render_init_py() -> str:
 
 
 def render_hooks_py(spec: CustomerSpec) -> str:
-    """post_init_hook with three tasks:
+    """post_init_hook with four tasks:
 
     1. (verified-patterns.md 4.5) res.company.create() only adds the new company
        to company_ids of self.env.user and SUPERUSER_ID, not of the normal
@@ -114,7 +126,10 @@ def render_hooks_py(spec: CustomerSpec) -> str:
        invisible to the UI admin after installation.
     2. (verified-patterns.md 4.16) Activate the demo-data language and set it on
        the company contact, so the data is stored/readable in that language.
-    3. (verified-patterns.md 4.12) Invoices are created as draft in XML
+    3. (verified-patterns.md 4.18) Create a demo login (name = company) with the
+       same groups/companies as base.user_admin, so a demo appointment does not
+       need a manual user setup afterwards.
+    4. (verified-patterns.md 4.12) Invoices are created as draft in XML
        (state 'posted' is forbidden in create()) and posted here via
        action_post() - the verified Odoo-native pattern
        (account/demo/account_demo.py _post_load_demo_data). Errors are swallowed
@@ -139,6 +154,44 @@ def render_hooks_py(spec: CustomerSpec) -> str:
                 # Do not abort the demo installation for a single invoice.
                 pass
 '''
+    demo_user_block = f'''
+
+def _create_demo_user(env, company, admin):
+    """Create a demo login (name = company, same rights as base.user_admin).
+
+    Verified against odoo/odoo@19.0 (verified-patterns.md 4.18):
+    - ``res.users`` has a UNIQUE(login) constraint. If a user with this login
+      already exists (e.g. a second demo package in the same database) the
+      creation is skipped instead of aborting the installation.
+    - ``res.users`` delegates to ``res.partner`` via ``_inherits``; ``name``
+      creates/updates the related partner (partner company is synced to
+      ``company_id`` in ``res.users.create()``).
+    - ``group_ids`` is copied from ``base.user_admin`` (not just
+      ``base.group_system``) because the app manager groups are linked to the
+      admin by the modules and are NOT implied by ``group_system``.
+    - ``no_reset_password`` (auth_signup) suppresses the sign-up invitation.
+    """
+    existing = env["res.users"].with_context(active_test=False).search(
+        [("login", "=", "{DEMO_USER_LOGIN}")], limit=1
+    )
+    if existing:
+        # Another demo package already created this login. Grant it access to the
+        # new demo company instead of aborting on the UNIQUE(login) constraint.
+        if company not in existing.company_ids:
+            existing.write({{"company_ids": [Command.link(company.id)]}})
+        return
+    groups = admin.group_ids if admin else env.ref("base.group_system")
+    companies = (admin.company_ids if admin else env["res.company"].browse()) | company
+    env["res.users"].with_context(no_reset_password=True).create({{
+        "name": company.name,
+        "login": "{DEMO_USER_LOGIN}",
+        "password": "{DEMO_USER_PASSWORD}",
+        "lang": "{language}",
+        "company_id": company.id,
+        "company_ids": [Command.set(companies.ids)],
+        "group_ids": [Command.set(groups.ids)],
+    }})
+'''
     return f'''# -*- coding: utf-8 -*-
 from odoo.fields import Command
 
@@ -161,7 +214,7 @@ def pre_init_hook(env):
 
 
 def post_init_hook(env):
-    """See docstring in engine/manifest.py (verified-patterns.md 4.5, 4.12, 4.16)."""
+    """See docstring in engine/manifest.py (verified-patterns.md 4.5, 4.12, 4.16, 4.18)."""
     company = env.ref("{module}.{company_xmlid}", raise_if_not_found=False)
     admin = env.ref("base.user_admin", raise_if_not_found=False)
     if company and admin:
@@ -171,4 +224,5 @@ def post_init_hook(env):
         }})
     if company:
         company.partner_id.lang = "{language}"
-{invoice_block}'''
+        _create_demo_user(env, company, admin)
+{invoice_block}{demo_user_block}'''

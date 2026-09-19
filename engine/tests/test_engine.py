@@ -25,7 +25,8 @@ from engine.model import (
     SpecError,
     StockQuant,
 )
-from engine.manifest import depends
+from engine.docker.test_install import analyze_log
+from engine.manifest import DEMO_USER_LOGIN, DEMO_USER_PASSWORD, depends, render_hooks_py
 from engine.schema import build_schema
 from engine.spec_loader import load_spec
 from engine.validate import validate_module
@@ -379,6 +380,72 @@ class LanguageTests(unittest.TestCase):
             "language": "en_US",
         })
         self.assertEqual(spec.resolved_language, "en_US")
+
+
+class DemoUserTests(unittest.TestCase):
+    """Auto-created demo user in the post_init_hook (verified-patterns.md 4.18)."""
+
+    def _hooks(self, **overrides) -> str:
+        return render_hooks_py(_minimal_spec(**overrides))
+
+    def test_demo_user_is_created(self):
+        hooks = self._hooks()
+        self.assertIn("_create_demo_user", hooks)
+        self.assertIn(f'"login": "{DEMO_USER_LOGIN}"', hooks)
+        self.assertIn(f'"password": "{DEMO_USER_PASSWORD}"', hooks)
+
+    def test_demo_user_name_is_the_company(self):
+        self.assertIn('"name": company.name', self._hooks())
+
+    def test_demo_user_copies_admin_groups_and_companies(self):
+        hooks = self._hooks()
+        self.assertIn("groups = admin.group_ids", hooks)
+        self.assertIn("admin.company_ids", hooks)
+        self.assertIn('"company_id": company.id', hooks)
+        self.assertIn('"company_ids": [Command.set(companies.ids)]', hooks)
+
+    def test_demo_user_creation_skips_existing_login(self):
+        # UNIQUE(login): a second demo package must not abort the installation.
+        hooks = self._hooks()
+        self.assertIn("if existing:", hooks)
+        self.assertIn("existing.write", hooks)
+        self.assertIn("return", hooks)
+
+    def test_demo_user_does_not_trigger_signup_email(self):
+        self.assertIn("no_reset_password=True", self._hooks())
+
+
+class InstallLogTests(unittest.TestCase):
+    """Pure log analysis of the installation smoke test (engine/docker/test_install.py)."""
+
+    def test_success_log(self):
+        log = "INFO loading bt_demo_x\nModule bt_demo_x loaded in 1.19s, 3790 queries\n"
+        ok, reasons = analyze_log(log, "bt_demo_x")
+        self.assertTrue(ok, reasons)
+        self.assertEqual(reasons, [])
+
+    def test_traceback_is_failure(self):
+        log = "Module bt_demo_x loaded in 1.0s\nTraceback (most recent call last):\n..."
+        ok, reasons = analyze_log(log, "bt_demo_x")
+        self.assertFalse(ok)
+        self.assertTrue(any("Traceback" in r for r in reasons))
+
+    def test_critical_is_failure(self):
+        log = "Module bt_demo_x loaded in 1.0s\nCRITICAL something\n"
+        ok, reasons = analyze_log(log, "bt_demo_x")
+        self.assertFalse(ok)
+        self.assertTrue(any("CRITICAL" in r for r in reasons))
+
+    def test_missing_marker_is_failure(self):
+        log = "INFO loading bt_demo_x\n"
+        ok, reasons = analyze_log(log, "bt_demo_x")
+        self.assertFalse(ok)
+        self.assertTrue(any("success marker" in r for r in reasons))
+
+    def test_marker_of_another_module_does_not_count(self):
+        log = "Module bt_other loaded in 1.0s\n"
+        ok, _ = analyze_log(log, "bt_demo_x")
+        self.assertFalse(ok)
 
 
 if __name__ == "__main__":

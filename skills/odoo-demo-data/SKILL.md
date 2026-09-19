@@ -32,18 +32,31 @@ knowledge lives in `reference/`.
 
 ## Workflow (customer -> module)
 
-1. **Determine the profile.** Customer's industry/business model -> required Odoo
-   apps and process chain. Object-type mapping: see `reference/spec-format.md`.
-2. **Write the specification.** Copy `examples/muster_foerdertechnik.json`
-   (manufacturing) or `examples/nishcom_ag.json` (multi-app/Enterprise) and adapt
-   it. All fields: `reference/spec-format.md`.
+1. **Determine the required bundles.** Research the customer's industry/business
+   model and reason about which processes matter - including adjacent ones (e.g.
+   medical devices -> quality control, batch/lot traceability). Then pick
+   capability bundles from `reference/capabilities.md` (menu with "relevant when"
+   hints; live via `python3 -m engine.cli capabilities`). Dependencies are closed
+   automatically (e.g. `mrp` pulls the warehouse and the product catalog). There is
+   **no fixed industry profile** (`ROADMAP.md`, principle "No fixed industry
+   verticals"). Section/field details: `reference/spec-format.md`.
+2. **Write the specification.** Scaffold it from the chosen bundles (recommended,
+   closes dependencies):
+   ```bash
+   python3 -m engine.cli new --with <bundle,...> --name "<Customer>" --country ch \
+       [--street/--city/--zip/--vat/--currency/--chart-template] --out examples/<customer>.json
+   ```
+   Then fill the sections with real content. Either example spec also works as a
+   template: `examples/muster_foerdertechnik.json` (manufacturing) or
+   `examples/nishcom_ag.json` (multi-app/Enterprise). All fields:
+   `reference/spec-format.md`.
 3. **Generate** (static validation runs automatically, no ZIP is built on errors):
    ```bash
-   python3 -m engine.cli generate --spec examples/<customer>.json --out dist
+   python3 -m engine.cli generate --spec examples/<customer>.json --out output
    ```
 4. **Validate statically** (optional, independent of the build):
    ```bash
-   python3 -m engine.cli validate dist/<technical_name>.zip
+   python3 -m engine.cli validate output/<technical_name>.zip
    ```
 5. **Install for real** against Odoo 19.0 and cross-check via Postgres:
    `reference/install-test-protocol.md`.
@@ -63,7 +76,7 @@ engine/
   cli.py           CLI (generate / validate)
 examples/          example specifications
 engine/tests/      engine tests:  python3 -m unittest discover -s engine/tests -t .
-engine/docker/     community smoke test (see engine/docker/README.md)
+engine/docker/     installation smoke-test harness, Enterprise instance ../odoodemo-local (see engine/docker/README.md)
 examples/reference/  historical reference modules (no longer a template)
 ```
 
@@ -76,6 +89,9 @@ examples/reference/  historical reference modules (no longer a template)
   code/tests instead of duplicating.
 - **Demand-driven growth:** A new object type only appears once a concrete
   customer needs it - but then fully verified + tested.
+- **No fixed industry verticals:** no catalog of canned industry profiles; each
+  module is composed per customer from the verified building blocks. Rationale:
+  `ROADMAP.md`.
 - **Test for real instead of guessing:** Static validation does not replace a real
   installation.
 
@@ -85,6 +101,7 @@ examples/reference/  historical reference modules (no longer a template)
 |---|---|
 | `reference/verified-patterns.md` | All verified Odoo 19.0 patterns (fields, sources, landmines) |
 | `reference/spec-format.md` | Complete JSON schema of the customer specification |
+| `reference/capabilities.md` | Capability bundles (selection menu, "relevant when", dependencies) - generated |
 | `reference/verification-protocol.md` | How to verify a new object type/field against the source |
 | `reference/install-test-protocol.md` | Real installation smoke test (Enterprise, fresh DB, Postgres) |
 | `reference/delivery.md` | Formalities, company scoping, history of the delivered modules |

@@ -7,6 +7,12 @@ Guide:
 - Mechanical usage / CLI: [README.md](README.md).
 - Open items: [ROADMAP.md](ROADMAP.md).
 
+## Local test instance
+
+Installation smoke tests target the local Odoo 19 Enterprise (trial) instance in
+`../odoodemo-local` (Docker). This repo ships no Community setup. See
+`skills/odoo-demo-data/reference/install-test-protocol.md`.
+
 ## Hard rules
 
 - **Never guess Odoo field names or behavior.** Verify against the
@@ -16,6 +22,9 @@ Guide:
   a second fix. No fix without a traceback.
 - **No `--test-enable`** for the installation smoke test:
   `skills/odoo-demo-data/reference/install-test-protocol.md`.
+- **No fixed industry profiles/archetypes.** Compose each module per customer
+  from the verified building blocks; there is no catalog of canned industry
+  profiles. Principles: [ROADMAP.md](ROADMAP.md).
 - Language of docs, skills and code comments: English. Language of the generated
   demo data: derived from the example company's country, unless the spec sets
   `language` explicitly (see `skills/odoo-demo-data/reference/verified-patterns.md`

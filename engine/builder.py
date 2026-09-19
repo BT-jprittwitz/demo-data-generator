@@ -42,6 +42,8 @@ def write_module_dir(spec: CustomerSpec, out_dir: Path) -> Path:
         (data_dir / "purchase_order_data.xml").write_text(records.render_purchase_order_xml(spec), encoding="utf-8")
     if spec.stock_quants:
         (data_dir / "stock_quant_data.xml").write_text(records.render_stock_quant_xml(spec), encoding="utf-8")
+    if spec.manufacturing_orders:
+        (data_dir / "mrp_production_data.xml").write_text(records.render_mrp_production_xml(spec), encoding="utf-8")
     if spec.invoices:
         (data_dir / "account_move_data.xml").write_text(records.render_account_move_xml(spec), encoding="utf-8")
     if spec.helpdesk_tickets:

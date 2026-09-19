@@ -218,6 +218,32 @@
         "lines"
       ]
     },
+    "ManufacturingOrder": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "product_xmlid": {
+          "type": "string"
+        },
+        "qty": {
+          "type": "number"
+        },
+        "bom_xmlid": {
+          "type": "string"
+        },
+        "date_start": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "product_xmlid",
+        "qty"
+      ]
+    },
     "SaleOrderLine": {
       "type": "object",
       "properties": {
@@ -515,6 +541,12 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/Bom"
+          }
+        },
+        "manufacturing_orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ManufacturingOrder"
           }
         },
         "quotation": {

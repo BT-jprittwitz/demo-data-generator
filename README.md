@@ -12,10 +12,10 @@ Pure Python stdlib, no dependencies, no `pip install` needed.
 ## Usage
 
 ```bash
-python3 -m engine.cli generate --spec examples/muster_foerdertechnik.json --out dist
+python3 -m engine.cli generate --spec examples/muster_foerdertechnik.json --out output
 ```
 
-Builds `dist/<technical_name>/` (module directory) and `dist/<technical_name>.zip`.
+Builds `output/<technical_name>/` (module directory) and `output/<technical_name>.zip`.
 Static validation (`engine/validate.py`) runs automatically before zipping; on
 errors no ZIP is built (`--force` forces it anyway, not recommended).
 
@@ -31,15 +31,29 @@ Generate the JSON schema of the specification (new):
 python3 -m engine.cli spec-schema --out engine/spec/spec.schema.json
 ```
 
+List the capability bundles / scaffold a spec skeleton (see
+`skills/odoo-demo-data/reference/capabilities.md`):
+
+```bash
+python3 -m engine.cli capabilities
+python3 -m engine.cli new --with mrp,sales --name "Muster AG" --country ch --out examples/muster.json
+```
+
 ## Writing a new customer specification
 
 Copy `examples/muster_foerdertechnik.json` (manufacturing customer) or
 `examples/nishcom_ag.json` (multi-app/Enterprise) as a template. Covers the verified
 object types: `res.company` (incl. chart of accounts), `res.partner`,
-`product.product`, `mrp.bom`, `sale.order`, `crm.lead`, `purchase.order`,
-`stock.quant`/`stock.warehouse`, `account.move` and `helpdesk.ticket`.
+`product.product`, `mrp.bom`, `mrp.production`, `sale.order`, `crm.lead`,
+`purchase.order`, `stock.quant`/`stock.warehouse`, `account.move` and
+`helpdesk.ticket`.
 Complete format: `skills/odoo-demo-data/reference/spec-format.md`.
 Unknown fields are rejected on load (typo protection).
+
+Every generated module creates, besides the administrator, a demo login
+`demo`/`demo` (name = company, same rights as `base.user_admin`) in the
+`post_init_hook` - no manual user setup after a demo appointment. If the login
+already exists, creation is skipped (verified-patterns 4.18).
 
 ## Tests
 
@@ -62,7 +76,8 @@ engine/
   cli.py            CLI (generate / validate / spec-schema)
   spec/spec.schema.json  generated JSON schema of the customer specification
   tests/           engine tests (no Odoo needed)
-  docker/          community installation smoke test (see its README)
+  docker/          installation smoke-test harness against the local Enterprise
+                   instance ../odoodemo-local (see its README)
 skills/odoo-demo-data/   skill: workflow + reference (verified-patterns, spec-format, ...)
 opencode.json/.opencode/ opencode adapter (registers skills/, /new-demo command)
 examples/                example specifications

@@ -18,6 +18,7 @@ from .model import (
     HelpdeskTicket,
     Invoice,
     InvoiceLine,
+    ManufacturingOrder,
     Module,
     Partner,
     Product,
@@ -140,6 +141,19 @@ def load_bom(d: dict[str, Any]) -> Bom:
         lines=lines,
         qty=_get(d, "qty", where, default=1.0),
         uom_xmlid=_get(d, "uom_xmlid", where, default="uom.product_uom_unit"),
+    )
+
+
+def load_manufacturing_order(d: dict[str, Any]) -> ManufacturingOrder:
+    xml_id = _get(d, "xml_id", "manufacturing_order", required=True)
+    where = f"manufacturing_order {xml_id}"
+    _reject_unknown(d, ManufacturingOrder, where)
+    return ManufacturingOrder(
+        xml_id=xml_id,
+        product_xmlid=_get(d, "product_xmlid", where, required=True),
+        qty=_get(d, "qty", where, required=True),
+        bom_xmlid=_get(d, "bom_xmlid", where, default=None),
+        date_start=_get(d, "date_start", where, default=None),
     )
 
 
@@ -270,6 +284,7 @@ def load_spec(d: dict[str, Any]) -> CustomerSpec:
         partners=[load_partner(p) for p in d.get("partners", [])],
         products=[load_product(p) for p in d.get("products", [])],
         boms=[load_bom(b) for b in d.get("boms", [])],
+        manufacturing_orders=[load_manufacturing_order(x) for x in d.get("manufacturing_orders", [])],
         quotation=load_sale_order(quotation_raw) if quotation_raw else None,
         example_orders=[load_sale_order(o) for o in d.get("example_orders", [])],
         crm_leads=[load_crm_lead(x) for x in d.get("crm_leads", [])],

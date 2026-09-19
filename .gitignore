@@ -1,4 +1,4 @@
-dist/
+output/
 __pycache__/
 *.pyc
 .DS_Store

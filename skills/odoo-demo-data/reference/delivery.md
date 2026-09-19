@@ -6,8 +6,8 @@
 - **Author:** always `braintec`.
 - **License:** `LGPL-3`.
 - **Website:** `https://www.braintec.com`.
-- Output: `dist/<technical_name>/` (module directory) and
-  `dist/<technical_name>.zip` (the delivered artifact). `dist/` is gitignored.
+- Output: `output/<technical_name>/` (module directory) and
+  `output/<technical_name>.zip` (the delivered artifact). `output/` is gitignored.
 
 ## Company scoping (central)
 
@@ -20,14 +20,15 @@ data where possible) and keys **all** demo data to it:
 - Invoices: `company_id` + `context="{'allowed_company_ids': [...]}"`.
 - The `post_init_hook` adds `base.user_admin` to the demo company's
   `company_ids` (otherwise invisible, see verified-patterns 4.5).
+- The `post_init_hook` also creates a demo login (`demo`/`demo`, name = company)
+  with the same groups/companies as `base.user_admin`, so the customer can log in
+  after the appointment without a manual user setup (verified-patterns 4.18). If
+  the login already exists, creation is skipped.
 - E-commerce/website would need separate clarification (the shop filters by
   `website.company_id`); currently **not** covered.
 
 ## Deliberately out of scope
 
-- **Manufacturing orders (`mrp.production`)**: `picking_type_id` depends on the
-  target instance's warehouse setup (same dependency class as
-  chart-of-accounts references).
 - **Invoices/accounting**: supported in the meantime (with chart-of-accounts
   loading and `accounting_app`), but only with an installable localization.
 

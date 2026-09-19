@@ -247,3 +247,78 @@ is derived from the company country via `COUNTRY_DEFAULT_LANGUAGE` in
 
 The `post_init_hook` activates the language (`res.lang.active = True`, cf.
 `res_lang.py:_activate_lang`) and sets `company.partner_id.lang`.
+
+## 4.17 `mrp.production` — a draft manufacturing order needs a warehouse
+
+Source: `odoo/odoo@19.0`, `addons/mrp/models/mrp_production.py`.
+
+- Required for `create()`: `product_id` (`check_company`), `product_qty` (SQL
+  Constraint `check (product_qty > 0)`), `product_uom_id`, `picking_type_id`,
+  `location_src_id`, `location_dest_id`, `date_start` (default now). The engine
+  sets `product_id`/`bom_id`/`product_qty`/`company_id`/`picking_type_id` and
+  lets `product_uom_id` and the locations be computed from product/BOM/operation
+  type.
+- `state` is `compute='_compute_state', store=True, readonly=True` → **never set
+  it**. A freshly created MO is `draft`; `create()` does not call
+  `action_confirm` (only `button_confirm`/`action_confirm` do), so **no stock is
+  posted**. It does generate draft `stock.move`/`mrp.workorder` records and a
+  `mrp.production.group` (`create()`).
+- `picking_type_id` (`domain code='mrp_operation'`, required, `check_company`):
+  `_compute_picking_type_id`/`_get_default_picking_type_id` search the company's
+  warehouse manufacturing operation type (`stock.warehouse.manu_type_id`, added
+  by mrp). Without a company warehouse the compute warns
+  (`_warehouse_redirect_warning`). Set it explicitly:
+  `eval="obj(ref('warehouse_demo')).manu_type_id.id"` (same `obj()` pattern as
+  4.10).
+- Because of this, the warehouse data file MUST load **before** the
+  manufacturing orders, and `needs_warehouse` includes mrp (`engine/model.py`;
+  `engine/manifest.py`). The dependency is one-sided: a warehouse never implies
+  manufacturing. This is the concrete case behind the general rule "producing
+  without a warehouse does not work".
+
+## 4.18 Auto-created demo user (name = company, admin rights)
+
+Goal: after the demo appointment the customer can log in without a manual user
+setup step. The `post_init_hook` therefore creates a `res.users` with
+`name` = company name and the same rights as `base.user_admin`.
+
+Verified against `odoo/odoo@19.0`, `odoo/addons/base/models/res_users.py`:
+
+- **`_inherits = {'res.partner': 'partner_id'}`** (`:165`): setting `name` in
+  `create()` creates the related partner automatically (`odoo/orm/models.py`
+  `create()` -> parent creation, `:4698-4714`). Do NOT pass `partner_id`.
+- **`res.users.create()`** (`:578-594`) syncs `partner_id.company_id =
+  company_id` when the partner has a company. `res.partner.write()` rejects
+  `company_id` if it conflicts with the user's company (`res_partner.py:901-909`)
+  — keeping both at the demo company avoids that.
+- **Required:** `login` (`:216`), `company_id` (`:245`, default
+  `env.company`). `password` (`:217`) is compute+inverse; plain text is hashed
+  by `_set_password()` (`:294`). Default `group_ids` is
+  `_default_groups()` = `base.group_user` (`:203-212`), NOT admin — the groups
+  must be set explicitly.
+- **UNIQUE(login)** (`_login_key`, `:274-275`): if a user with the login already
+  exists (e.g. a second demo package in the same DB) `create()` raises. The
+  hook searches first, skips creation and only adds the new demo company to the
+  existing user's `company_ids` (so both packages stay visible) instead of
+  aborting the install.
+- **Groups:** `base.group_system` implies only `group_erp_manager` +
+  `group_sanitize_override` (`base/security/base_groups.xml:35-40`). The app
+  manager groups (`sales_team.group_sale_manager`,
+  `account.group_account_manager`, `stock.group_stock_manager`,
+  `purchase.group_purchase_manager`, `helpdesk.group_helpdesk_manager`, ...)
+  are linked to `base.user_admin` by the modules, NOT implied by
+  `group_system`. Copy `admin.group_ids` to get the same rights.
+- **`company_ids`** is a `res_company_users_rel` m2m (`:247-248`); a constraint
+  requires `company_id in company_ids` (`_check_user_company`, `:501-510`). Add
+  the demo company (`admin.company_ids | company`) so the user can switch.
+- **`no_reset_password` context** (`odoo/addons/auth_signup/models/res_users.py:269-280`):
+  without it, `create()` sends a sign-up invitation when the partner has an
+  email. Pass the context (Odoo's own pattern, e.g.
+  `base/data/res_users_demo.xml:85`).
+- **`password` policy:** with `auth_password_policy` installed
+  (`_set_password` -> `_check_password_policy`), the password must respect
+  `auth_password_policy.minlength`. The default login/password `demo`/`demo`
+  is short; if a customer sets a long minimum, the spec value must comply.
+
+Login/password default: `demo`/`demo` (`engine/manifest.py` `DEMO_USER_LOGIN`/
+`DEMO_USER_PASSWORD`).

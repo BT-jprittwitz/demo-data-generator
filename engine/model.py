@@ -167,6 +167,39 @@ class Bom:
 
 
 @dataclass
+class ManufacturingOrder:
+    """``mrp.production`` as a DRAFT manufacturing order.
+
+    Verified against odoo/odoo@19.0 (addons/mrp/models/mrp_production.py):
+    - required for create(): ``product_id``, ``product_qty`` (SQL Constraint
+      ``check (product_qty > 0)``), ``product_uom_id``, ``picking_type_id``,
+      ``location_src_id``, ``location_dest_id``, ``date_start``. The last four
+      are computed from the company's warehouse manufacturing operation type
+      (``stock.warehouse.manu_type_id``, added by mrp) - so a company warehouse
+      MUST exist (``_compute_picking_type_id`` -> ``_warehouse_redirect_warning``
+      otherwise). This is why manufacturing implies inventory (verified-patterns
+      "manufacturing needs a warehouse").
+    - ``state`` is compute+store+readonly -> never set it; a new MO is ``draft``.
+    - ``create()`` only generates draft ``stock.move``/``mrp.workorder`` records
+      (and a production group); it does NOT call ``action_confirm``, so no stock
+      is posted.
+    """
+
+    xml_id: str
+    product_xmlid: str
+    qty: float
+    bom_xmlid: str | None = None
+    date_start: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.qty <= 0:
+            raise SpecError(
+                f"ManufacturingOrder {self.xml_id!r}: qty={self.qty} must be > 0 "
+                f"(SQL Constraint _qty_positive: check (product_qty > 0))."
+            )
+
+
+@dataclass
 class SaleOrderLine:
     product_xmlid: str
     qty: float
@@ -333,6 +366,7 @@ class CustomerSpec:
     partners: list[Partner] = field(default_factory=list)
     products: list[Product] = field(default_factory=list)
     boms: list[Bom] = field(default_factory=list)
+    manufacturing_orders: list[ManufacturingOrder] = field(default_factory=list)
     quotation: SaleOrder | None = None
     example_orders: list[SaleOrder] = field(default_factory=list)
     crm_leads: list[CrmLead] = field(default_factory=list)
@@ -372,10 +406,20 @@ class CustomerSpec:
             )
         product_ids = {p.xml_id for p in self.products}
         partner_ids = {p.xml_id for p in self.partners}
+        bom_ids = {b.xml_id for b in self.boms}
+        if self.manufacturing_orders and not self.boms:
+            raise SpecError(
+                "manufacturing_orders present but no boms: a manufacturing order needs a "
+                "bill of materials for its product (mrp.production.bom_id / components)."
+            )
         for bom in self.boms:
             _require(bom.product_xmlid, product_ids, f"Bom {bom.xml_id}: product_xmlid")
             for line in bom.lines:
                 _require(line.product_xmlid, product_ids, f"Bom {bom.xml_id}: bom_line product_xmlid")
+        for mo in self.manufacturing_orders:
+            _require(mo.product_xmlid, product_ids, f"ManufacturingOrder {mo.xml_id}: product_xmlid")
+            if mo.bom_xmlid:
+                _require(mo.bom_xmlid, bom_ids, f"ManufacturingOrder {mo.xml_id}: bom_xmlid")
         for order in ([self.quotation] if self.quotation else []) + self.example_orders:
             _require(order.partner_xmlid, partner_ids, f"SaleOrder {order.xml_id}: partner_xmlid")
             for line in order.lines:
@@ -399,7 +443,7 @@ class CustomerSpec:
 
     @property
     def needs_mrp(self) -> bool:
-        return bool(self.boms)
+        return bool(self.boms) or bool(self.manufacturing_orders)
 
     @property
     def needs_crm(self) -> bool:
@@ -417,8 +461,10 @@ class CustomerSpec:
     def needs_warehouse(self) -> bool:
         # Purchasing needs a warehouse (purchase_stock: picking_type_id required,
         # default from the company warehouse, otherwise NotNullViolation - actually
-        # occurred, see verified-patterns.md 4.10). Stock likewise.
-        return self.needs_purchase or self.needs_stock
+        # occurred, see verified-patterns.md 4.10). Stock likewise. Manufacturing
+        # needs it too (mrp.production.picking_type_id <- warehouse.manu_type_id);
+        # the dependency is one-sided: warehouse never implies manufacturing.
+        return self.needs_purchase or self.needs_stock or self.needs_mrp
 
     @property
     def needs_account(self) -> bool:

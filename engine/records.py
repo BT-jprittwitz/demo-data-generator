@@ -17,6 +17,7 @@ from .model import (
     CustomerSpec,
     HelpdeskTicket,
     Invoice,
+    ManufacturingOrder,
     Partner,
     Product,
     PurchaseOrder,
@@ -151,6 +152,38 @@ def bom_record(b: Bom, company_xmlid: str, language: str) -> ET.Element:
         field_el("company_id", ref=company_xmlid),
     ]
     return record_el("mrp.bom", b.xml_id, fields, context=_context(language))
+
+
+def mrp_production_record(
+    mo: ManufacturingOrder, company_xmlid: str, warehouse_xmlid: str, language: str
+) -> ET.Element:
+    """``mrp.production`` as a DRAFT manufacturing order (verified-patterns.md 4.17).
+
+    ``state`` is compute+store+readonly in 19.0 and must NOT be set (a new MO is
+    ``draft``). ``picking_type_id`` is required and its compute falls back to the
+    company warehouse; it is set explicitly from the demo warehouse's
+    manufacturing operation type (``stock.warehouse.manu_type_id``, added by mrp)
+    so it cannot pick another company's operation type. ``product_uom_id`` and
+    the locations are computed from product/BOM/operation type. No
+    ``action_confirm`` -> no stock posting.
+    """
+    fields = [
+        field_el("product_id", ref=mo.product_xmlid),
+    ]
+    if mo.bom_xmlid:
+        fields.append(field_el("bom_id", ref=mo.bom_xmlid))
+    fields += [
+        field_el("product_qty", text=mo.qty),
+        field_el("company_id", ref=company_xmlid),
+        field_el(
+            "picking_type_id",
+            model="stock.warehouse",
+            eval_=f"obj(ref('{warehouse_xmlid}')).manu_type_id.id",
+        ),
+    ]
+    if mo.date_start:
+        fields.append(field_el("date_start", text=mo.date_start))
+    return record_el("mrp.production", mo.xml_id, fields, context=_context(language, company_xmlid))
 
 
 def sale_order_record(o: SaleOrder, company_xmlid: str, language: str) -> ET.Element:
@@ -390,6 +423,16 @@ def render_product_xml(spec: CustomerSpec) -> str:
 def render_mrp_bom_xml(spec: CustomerSpec) -> str:
     return render_odoo_file(
         [bom_record(b, spec.company.xml_id, spec.resolved_language) for b in spec.boms]
+    )
+
+
+def render_mrp_production_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [
+            mrp_production_record(mo, spec.company.xml_id, WAREHOUSE_XMLID, spec.resolved_language)
+            for mo in spec.manufacturing_orders
+        ],
+        noupdate=True,
     )
 
 
