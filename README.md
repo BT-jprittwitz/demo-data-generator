@@ -1,66 +1,78 @@
-# Odoo Demo-Daten-Generator
+# Odoo Demo-Data Generator
 
-Generator-Engine, die aus einer Kunden-Spezifikation (JSON) ein installierbares
-Odoo-19.0-Demo-Datenmodul (ZIP) baut. Voller Kontext, verifizierte technische
-Learnings und Roadmap: [HANDOVER.md](HANDOVER.md).
+Generator engine that builds an installable Odoo 19.0 demo-data module (ZIP)
+from a customer specification (JSON).
 
-Nur Python-Stdlib, keine Abhaengigkeiten, kein `pip install` noetig.
+- Workflow, verified patterns and protocols:
+  [skills/odoo-demo-data/SKILL.md](skills/odoo-demo-data/SKILL.md)
+- Open items: [ROADMAP.md](ROADMAP.md)
 
-## Verwendung
+Pure Python stdlib, no dependencies, no `pip install` needed.
 
-```bash
-python3 -m generator.cli generate --spec examples/muster_foerdertechnik.json --out dist
-```
-
-Baut `dist/<technical_name>/` (Modulverzeichnis) und `dist/<technical_name>.zip`.
-Vor dem Zippen laeuft automatisch die statische Validierung
-(`generator/validate.py`); bei Fehlern wird kein ZIP gebaut (`--force` erzwingt
-es trotzdem, nicht empfohlen).
-
-Ein bestehendes Modul (Verzeichnis oder ZIP) unabhaengig pruefen:
+## Usage
 
 ```bash
-python3 -m generator.cli validate reference/bt_demo_mfg.zip
+python3 -m engine.cli generate --spec examples/muster_foerdertechnik.json --out dist
 ```
 
-## Eine neue Kunden-Spezifikation schreiben
+Builds `dist/<technical_name>/` (module directory) and `dist/<technical_name>.zip`.
+Static validation (`engine/validate.py`) runs automatically before zipping; on
+errors no ZIP is built (`--force` forces it anyway, not recommended).
 
-`examples/muster_foerdertechnik.json` als Vorlage kopieren. Deckt die in
-HANDOVER.md Abschnitt 4 verifizierten Objektarten ab: `res.company`,
-`res.partner`, `product.product`, `mrp.bom`, `sale.order`. Keine anderen
-Objektarten - siehe "bedarfsgetriebenes Wachstum" in HANDOVER.md: neue
-Archetypen (z.B. Subscriptions fuer SaaS-Kunden) brauchen zuerst eine eigene
-Verifikation gegen den Odoo-Source, bevor dafuer ein Baustein entsteht.
+Check an existing module (directory or ZIP) independently:
+
+```bash
+python3 -m engine.cli validate examples/reference/bt_demo_mfg.zip
+```
+
+Generate the JSON schema of the specification (new):
+
+```bash
+python3 -m engine.cli spec-schema --out engine/spec/spec.schema.json
+```
+
+## Writing a new customer specification
+
+Copy `examples/muster_foerdertechnik.json` (manufacturing customer) or
+`examples/nishcom_ag.json` (multi-app/Enterprise) as a template. Covers the verified
+object types: `res.company` (incl. chart of accounts), `res.partner`,
+`product.product`, `mrp.bom`, `sale.order`, `crm.lead`, `purchase.order`,
+`stock.quant`/`stock.warehouse`, `account.move` and `helpdesk.ticket`.
+Complete format: `skills/odoo-demo-data/reference/spec-format.md`.
+Unknown fields are rejected on load (typo protection).
 
 ## Tests
 
 ```bash
-python3 -m unittest discover -s tests
+python3 -m unittest discover -s engine/tests -t .
 ```
 
-## Repo-Struktur
+## Repo structure
 
 ```
-generator/
-  model.py         Datenmodell (Dataclasses) + Validierung der Spezifikation selbst
-  spec_loader.py    JSON -> Dataclasses
-  records.py        Dataclasses -> Odoo-XML-Record-Elemente (verifizierte Muster)
-  xmlgen.py         Low-Level-XML-Helfer (ElementTree, garantiert wohlgeformt)
-  manifest.py       __manifest__.py / hooks.py Rendering
-  builder.py        Modulverzeichnis + ZIP zusammenbauen
-  validate.py       Statische Pruefung eines gebauten Moduls (kein Odoo-Kernel noetig)
-  cli.py            CLI (generate / validate)
-examples/
-  muster_foerdertechnik.json   Beispiel-Spezifikation (produzierender Kunde)
-  tests/                          Tests fuer die Engine selbst (kein Odoo noetig)
-  docker/                         Community-Installations-Smoketest (siehe dortige README)
-  reference/                      Historische Referenzmodule (nicht mehr Vorlage, siehe HANDOVER.md 6)
-    bt_demo_mfg.zip
+engine/
+  model.py         data model (dataclasses) + validation of the specification itself
+  spec_loader.py    JSON -> dataclasses (rejects unknown fields)
+  schema.py         JSON schema from the dataclasses (single source of truth)
+  records.py        dataclasses -> Odoo XML record elements (verified patterns)
+  xmlgen.py         low-level XML helpers (ElementTree, guaranteed well-formed)
+  manifest.py       __manifest__.py / hooks.py rendering
+  builder.py        assemble module directory + ZIP
+  validate.py       static check of a built module (no Odoo kernel needed)
+  cli.py            CLI (generate / validate / spec-schema)
+  spec/spec.schema.json  generated JSON schema of the customer specification
+  tests/           engine tests (no Odoo needed)
+  docker/          community installation smoke test (see its README)
+skills/odoo-demo-data/   skill: workflow + reference (verified-patterns, spec-format, ...)
+opencode.json/.opencode/ opencode adapter (registers skills/, /new-demo command)
+examples/                example specifications
+examples/reference/      historical reference modules (no longer a template)
 ```
 
-## Bekannte Grenze
+## Known limitation
 
-`generator/validate.py` prueft nur Struktur (Wohlgeformtheit, xmlid-Referenzen,
-Manifest-Konsistenz, die drei bisher bekannten Landminen aus HANDOVER.md 4.1/4.3/4.7).
-Es ist **kein** Ersatz fuer eine echte Installation gegen einen Odoo-19.0-Kernel -
-das deckt nur `docker/` ab, sobald eine Maschine mit Docker verfuegbar ist.
+`engine/validate.py` only checks structure (well-formedness, xmlid references,
+manifest consistency and the known landmines from
+`skills/odoo-demo-data/reference/verified-patterns.md`). It is **no** substitute
+for a real installation against an Odoo 19.0 kernel - for that see
+`skills/odoo-demo-data/reference/install-test-protocol.md`.

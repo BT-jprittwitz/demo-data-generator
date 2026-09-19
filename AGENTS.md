@@ -1,43 +1,28 @@
-# Hinweise fuer Agenten (openCode/Claude Code etc.)
+# Notes for agents (opencode/Claude Code etc.)
 
-Kanonischer Kontext: [HANDOVER.md](HANDOVER.md). Engine-Doku: [README.md](README.md).
+Guide:
 
-## Harte Regeln
+- Workflow + reference knowledge: [`skills/odoo-demo-data/SKILL.md`](skills/odoo-demo-data/SKILL.md)
+  (neutral Markdown folder, also readable by other LLMs).
+- Mechanical usage / CLI: [README.md](README.md).
+- Open items: [ROADMAP.md](ROADMAP.md).
 
-- **Nie Odoo-Feldnamen/-Verhalten raten.** Vor XML-Generierung gegen den echten
-  Odoo-Source (Branch 19.0) verifizieren, siehe HANDOVER.md Abschnitt 3.
-- Bei Installationsfehler: **vollstaendigen Traceback** anfordern, bevor ein
-  zweiter Fix versucht wird. Kein Fix ohne Traceback.
-- Sprache der Doku/Kommentare: Deutsch (wie bestehende Dateien).
+## Hard rules
 
-## Installations-Smoketest (Gelernt, real passiert)
+- **Never guess Odoo field names or behavior.** Verify against the
+  real Odoo 19.0 source before XML generation. Recipe:
+  `skills/odoo-demo-data/reference/verification-protocol.md`.
+- On installation error: read/request the **complete traceback** before attempting
+  a second fix. No fix without a traceback.
+- **No `--test-enable`** for the installation smoke test:
+  `skills/odoo-demo-data/reference/install-test-protocol.md`.
+- Language of docs, skills and code comments: English. Language of the generated
+  demo data: derived from the example company's country, unless the spec sets
+  `language` explicitly (see `skills/odoo-demo-data/reference/verified-patterns.md`
+  4.16).
 
-`--test-enable` **nicht** fuer den Installations-Smoketest verwenden. Es fuehrt
-die Tests **aller** installierten Module aus (998 base-Tests + sale_mrp, ~3,5 min,
-Dutzende irrelevante `ERROR`-Zeilen aus `base.tests.test_cli`) statt nur unser
-Modul - das sieht wie ein Haenger aus und erzeugt Fehlalarme. `bt_demo_mfg` hat
-selbst keine Tests.
-
-Richtig (siehe `docker/`):
-
-```bash
-cd docker
-docker compose run --rm odoo odoo -i bt_demo_mfg --stop-after-init -d test_bt_demo_mfg
-```
-
-Vor einem frischen Lauf die Test-DB verwerfen, sonst wird nur eine bestehende DB
-geladen statt neu installiert:
+## Engine tests
 
 ```bash
-docker compose exec -T db psql -U odoo -d postgres -c "DROP DATABASE IF EXISTS test_bt_demo_mfg;"
-```
-
-Erfolg = `Module bt_demo_mfg loaded in ...`, exit 0, kein Traceback. Verifikation
-am besten direkt gegen Postgres (Company/Company-Context, siehe HANDOVER.md
-4.5/4.7), nicht nur den Log.
-
-## Tests der Engine
-
-```bash
-python3 -m unittest discover -s tests
+python3 -m unittest discover -s engine/tests -t .
 ```

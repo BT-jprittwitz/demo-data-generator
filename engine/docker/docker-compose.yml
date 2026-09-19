@@ -1,10 +1,10 @@
-# Lokale Testinstanz fuer die automatische Installationspruefung vor Auslieferung.
+# Local test instance for the automated installation check before delivery.
 #
-# Status: in Benutzung und verifiziert (Docker auf der Entwicklungsmaschine
-# verfuegbar). Ablauf siehe docker/README.md und AGENTS.md - kein --test-enable
-# beim Installations-Smoketest.
+# Status: in use and verified (Docker available on the development machine).
+# Procedure see engine/docker/README.md and AGENTS.md - no --test-enable for the
+# installation smoke test.
 #
-# Odoo-Version bewusst auf 19.0 gepinnt, passend zur Zielversion aus HANDOVER.md.
+# Odoo version intentionally pinned to 19.0, matching the target version.
 services:
   db:
     image: postgres:16
@@ -26,7 +26,7 @@ services:
     ports:
       - "8069:8069"
     volumes:
-      - ../dist:/mnt/extra-addons
+      - ../../dist:/mnt/extra-addons
       - odoo-data:/var/lib/odoo
 
 volumes:

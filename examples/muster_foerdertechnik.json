@@ -1,10 +1,10 @@
 {
   "module": {
     "technical_name": "bt_demo_mfg",
-    "title": "Demo Data - Produzierender Kunde (Company, Stueckliste, Angebote, Auftraege)",
+    "title": "Demo Data - Manufacturing Customer (Company, Bill of Materials, Quotations, Orders)",
     "category": "Manufacturing",
-    "summary": "Proof-of-concept: eigene Company, Kontakte, Produkte, Stuecklisten, Angebotsvorlage, Beispielauftraege",
-    "description": "Beispielhaftes Demo-Datenmodul fuer einen produzierenden Kunden: 1 neue Company (Kundenname, Adresse) - alle Daten sind darauf geschluesselt; 3 Kontakte; 7 Produkte (4 Komponenten, 2 Fertigprodukte, 1 Dienstleistung) mit Kosten, interner Referenz und Gewicht; 2 Stuecklisten fuer die Fertigprodukte; 1 Angebotsvorlage; 3 Beispiel-Verkaufsauftraege."
+    "summary": "Proof of concept: own company, contacts, products, bills of materials, quotation template, sample orders",
+    "description": "Sample demo-data module for a manufacturing customer: 1 new company (customer name, address) that all data is keyed to; 3 contacts; 7 products (4 components, 2 finished goods, 1 service) with cost, internal reference and weight; 2 bills of materials for the finished goods; 1 quotation template; 3 sample sales orders."
   },
   "company": {
     "xml_id": "demo_company",

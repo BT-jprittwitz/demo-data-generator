@@ -1,5 +1,5 @@
-"""Baut aus einer CustomerSpec ein installierbares Odoo-Modul: erst als
-Verzeichnisbaum, dann als ZIP."""
+"""Builds an installable Odoo module from a CustomerSpec: first as a
+directory tree, then as a ZIP."""
 from __future__ import annotations
 
 import zipfile
@@ -20,12 +20,32 @@ def write_module_dir(spec: CustomerSpec, out_dir: Path) -> Path:
     (module_dir / "hooks.py").write_text(render_hooks_py(spec), encoding="utf-8")
 
     (data_dir / "res_company_data.xml").write_text(records.render_res_company_xml(spec), encoding="utf-8")
+    # The chart of accounts MUST be loaded before products and invoices.
+    if spec.company.chart_template:
+        (data_dir / "account_chart_data.xml").write_text(records.render_account_chart_xml(spec), encoding="utf-8")
+    if spec.crm_leads:
+        (data_dir / "crm_team_data.xml").write_text(records.render_crm_team_xml(spec), encoding="utf-8")
+    if spec.helpdesk_tickets:
+        (data_dir / "helpdesk_team_data.xml").write_text(records.render_helpdesk_team_xml(spec), encoding="utf-8")
     if spec.partners:
         (data_dir / "res_partner_data.xml").write_text(records.render_res_partner_xml(spec), encoding="utf-8")
     if spec.products:
         (data_dir / "product_data.xml").write_text(records.render_product_xml(spec), encoding="utf-8")
     if spec.boms:
         (data_dir / "mrp_bom_data.xml").write_text(records.render_mrp_bom_xml(spec), encoding="utf-8")
+    # The warehouse MUST exist before purchasing and stock (purchase_stock picking_type_id).
+    if spec.needs_warehouse:
+        (data_dir / "stock_warehouse_data.xml").write_text(records.render_stock_warehouse_xml(spec), encoding="utf-8")
+    if spec.crm_leads:
+        (data_dir / "crm_lead_data.xml").write_text(records.render_crm_lead_xml(spec), encoding="utf-8")
+    if spec.purchase_orders:
+        (data_dir / "purchase_order_data.xml").write_text(records.render_purchase_order_xml(spec), encoding="utf-8")
+    if spec.stock_quants:
+        (data_dir / "stock_quant_data.xml").write_text(records.render_stock_quant_xml(spec), encoding="utf-8")
+    if spec.invoices:
+        (data_dir / "account_move_data.xml").write_text(records.render_account_move_xml(spec), encoding="utf-8")
+    if spec.helpdesk_tickets:
+        (data_dir / "helpdesk_ticket_data.xml").write_text(records.render_helpdesk_ticket_xml(spec), encoding="utf-8")
     if spec.quotation:
         (data_dir / "sale_order_quotation_data.xml").write_text(
             records.render_sale_order_quotation_xml(spec), encoding="utf-8"

@@ -1,0 +1,583 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Odoo Demo Data Customer Specification",
+  "type": "object",
+  "$ref": "#/$defs/CustomerSpec",
+  "$defs": {
+    "Module": {
+      "type": "object",
+      "properties": {
+        "technical_name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "technical_name",
+        "title",
+        "summary"
+      ]
+    },
+    "Company": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "street": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "zip": {
+          "type": "string"
+        },
+        "country_xmlid": {
+          "type": "string"
+        },
+        "xml_id": {
+          "type": "string"
+        },
+        "vat": {
+          "type": "string"
+        },
+        "currency_xmlid": {
+          "type": "string"
+        },
+        "chart_template": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "street",
+        "city",
+        "zip",
+        "country_xmlid"
+      ]
+    },
+    "Partner": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "country_xmlid": {
+          "type": "string"
+        },
+        "street": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "zip": {
+          "type": "string"
+        },
+        "vat": {
+          "type": "string"
+        },
+        "is_company": {
+          "type": "boolean"
+        },
+        "supplier_rank": {
+          "type": "integer"
+        },
+        "customer_rank": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name",
+        "country_xmlid",
+        "street",
+        "city",
+        "zip"
+      ]
+    },
+    "Product": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "consu",
+            "service"
+          ]
+        },
+        "sale_ok": {
+          "type": "boolean"
+        },
+        "purchase_ok": {
+          "type": "boolean"
+        },
+        "list_price": {
+          "type": "number"
+        },
+        "standard_price": {
+          "type": "number"
+        },
+        "is_storable": {
+          "type": "boolean"
+        },
+        "default_code": {
+          "type": "string"
+        },
+        "barcode": {
+          "type": "string"
+        },
+        "weight": {
+          "type": "number"
+        },
+        "volume": {
+          "type": "number"
+        },
+        "description_sale": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name",
+        "type",
+        "sale_ok",
+        "purchase_ok"
+      ]
+    },
+    "BomLine": {
+      "type": "object",
+      "properties": {
+        "product_xmlid": {
+          "type": "string"
+        },
+        "qty": {
+          "type": "number"
+        },
+        "uom_xmlid": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "product_xmlid",
+        "qty"
+      ]
+    },
+    "Bom": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "product_xmlid": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BomLine"
+          }
+        },
+        "qty": {
+          "type": "number"
+        },
+        "uom_xmlid": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "product_xmlid",
+        "lines"
+      ]
+    },
+    "SaleOrderLine": {
+      "type": "object",
+      "properties": {
+        "product_xmlid": {
+          "type": "string"
+        },
+        "qty": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "product_xmlid",
+        "qty",
+        "description"
+      ]
+    },
+    "SaleOrder": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SaleOrderLine"
+          }
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "sent"
+          ]
+        },
+        "date_order": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "partner_xmlid",
+        "lines"
+      ]
+    },
+    "CrmLead": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "lead",
+            "opportunity"
+          ]
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "contact_name": {
+          "type": "string"
+        },
+        "email_from": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "expected_revenue": {
+          "type": "number"
+        },
+        "probability": {
+          "type": "number"
+        },
+        "stage_xmlid": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name"
+      ]
+    },
+    "PurchaseOrderLine": {
+      "type": "object",
+      "properties": {
+        "product_xmlid": {
+          "type": "string"
+        },
+        "qty": {
+          "type": "number"
+        },
+        "price_unit": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string"
+        },
+        "date_planned": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "product_xmlid",
+        "qty",
+        "price_unit",
+        "description"
+      ]
+    },
+    "PurchaseOrder": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PurchaseOrderLine"
+          }
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "sent"
+          ]
+        },
+        "date_order": {
+          "type": "string"
+        },
+        "partner_ref": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "partner_xmlid",
+        "lines"
+      ]
+    },
+    "StockQuant": {
+      "type": "object",
+      "properties": {
+        "product_xmlid": {
+          "type": "string"
+        },
+        "qty": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "product_xmlid",
+        "qty"
+      ]
+    },
+    "InvoiceLine": {
+      "type": "object",
+      "properties": {
+        "product_xmlid": {
+          "type": "string"
+        },
+        "qty": {
+          "type": "number"
+        },
+        "price_unit": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "product_xmlid",
+        "qty",
+        "price_unit",
+        "description"
+      ]
+    },
+    "Invoice": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "move_type": {
+          "type": "string",
+          "enum": [
+            "in_invoice",
+            "out_invoice"
+          ]
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "invoice_date": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/InvoiceLine"
+          }
+        },
+        "ref": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "move_type",
+        "partner_xmlid",
+        "invoice_date",
+        "lines"
+      ]
+    },
+    "HelpdeskTicket": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "stage_xmlid": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name"
+      ]
+    },
+    "CustomerSpec": {
+      "type": "object",
+      "properties": {
+        "module": {
+          "$ref": "#/$defs/Module"
+        },
+        "company": {
+          "$ref": "#/$defs/Company"
+        },
+        "partners": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Partner"
+          }
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Product"
+          }
+        },
+        "boms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bom"
+          }
+        },
+        "quotation": {
+          "$ref": "#/$defs/SaleOrder"
+        },
+        "example_orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SaleOrder"
+          }
+        },
+        "crm_leads": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CrmLead"
+          }
+        },
+        "purchase_orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PurchaseOrder"
+          }
+        },
+        "stock_quants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StockQuant"
+          }
+        },
+        "invoices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Invoice"
+          }
+        },
+        "helpdesk_tickets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HelpdeskTicket"
+          }
+        },
+        "language": {
+          "type": "string"
+        },
+        "crm_team_name": {
+          "type": "string"
+        },
+        "helpdesk_team_name": {
+          "type": "string"
+        },
+        "accounting_app": {
+          "type": "string",
+          "enum": [
+            "full",
+            "invoicing"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "module",
+        "company"
+      ]
+    }
+  }
+}

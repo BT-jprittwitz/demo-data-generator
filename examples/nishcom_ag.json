@@ -1,0 +1,392 @@
+{
+  "module": {
+    "technical_name": "bt_demo_nishcom",
+    "title": "Demo Data - Nishcom AG (Sales, Purchase, Inventory, Accounting, CRM, Helpdesk)",
+    "category": "Sales",
+    "summary": "ERP demo for a Swiss e-commerce retailer: own company with a chart of accounts (CH), assortment, purchasing/vendors, stock, CRM pipeline, posted customer/vendor invoices and helpdesk tickets",
+    "description": "Sample demo-data module for Nishcom AG (Langenthal): 1 new company including the Swiss chart of accounts (l10n_ch), 5 contacts (vendors and customers), 12 products from the riding, agriculture, fishing and hunting niches, 4 CRM opportunities, 2 purchase orders, stock for 6 products, 1 customer invoice and 1 vendor bill (posted in the post_init_hook) as well as 3 helpdesk tickets."
+  },
+  "accounting_app": "full",
+  "company": {
+    "xml_id": "demo_company",
+    "name": "Nishcom AG",
+    "street": "Chasseralstrasse 3",
+    "city": "Langenthal",
+    "zip": "4900",
+    "country_xmlid": "base.ch",
+    "vat": "CHE-142.028.625",
+    "currency_xmlid": "base.CHF",
+    "chart_template": "ch"
+  },
+  "partners": [
+    {
+      "xml_id": "partner_supplier_saddle",
+      "name": "Busse Reitsport GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE811234567",
+      "street": "Sattelweg 12",
+      "city": "Muenster",
+      "zip": "48143",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_supplier_agri",
+      "name": "Landtechnik Roth AG",
+      "country_xmlid": "base.ch",
+      "vat": "CHE-109.876.543",
+      "street": "Industriestrasse 4",
+      "city": "Sursee",
+      "zip": "6210",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_supplier_fishing",
+      "name": "Norwegen Sportfiske AS",
+      "country_xmlid": "base.no",
+      "vat": "NO987654321MVA",
+      "street": "Fjordveien 8",
+      "city": "Bergen",
+      "zip": "5003",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_yonc",
+      "name": "YONC AG",
+      "country_xmlid": "base.ch",
+      "vat": "CHE-222.333.444",
+      "street": "Bahnhofstrasse 22",
+      "city": "Zuerich",
+      "zip": "8001",
+      "supplier_rank": 0,
+      "customer_rank": 1
+    },
+    {
+      "xml_id": "partner_private",
+      "name": "Petra Wenger",
+      "country_xmlid": "base.ch",
+      "street": "Moosweg 7",
+      "city": "Thun",
+      "zip": "3600",
+      "is_company": false,
+      "supplier_rank": 0,
+      "customer_rank": 1
+    }
+  ],
+  "products": [
+    {
+      "xml_id": "product_riding_boot",
+      "name": "Reitstiefel Winterfell Classic",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 189.0,
+      "standard_price": 96.0,
+      "default_code": "REIT-STF-CLASSIC",
+      "barcode": "7640000000017",
+      "weight": 1.4,
+      "description_sale": "Gefuetterte Winterreitstiefel aus Volleder, rutschfeste Sohle, Groessen 36-46."
+    },
+    {
+      "xml_id": "product_riding_saddle",
+      "name": "Vielseitigkeitssattel FlexFit 17 Zoll",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 1290.0,
+      "standard_price": 720.0,
+      "default_code": "REIT-SATTEL-FF17",
+      "barcode": "7640000000024",
+      "weight": 6.2,
+      "description_sale": "Vielseitigkeitssattel mit verstellbarem Kopfeisen, inkl. Steigbuegelriemen."
+    },
+    {
+      "xml_id": "product_riding_helmet",
+      "name": "Reithelm Safety Pro",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 149.0,
+      "standard_price": 74.0,
+      "default_code": "REIT-HLM-PRO",
+      "barcode": "7640000000031",
+      "weight": 0.6,
+      "description_sale": "Reithelm nach VG1-Standard, belueftet, mit Drehverschluss."
+    },
+    {
+      "xml_id": "product_agri_fence",
+      "name": "Weidezaungeraet PowerFence 5000",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 259.0,
+      "standard_price": 132.0,
+      "default_code": "LAND-ZAUN-5000",
+      "barcode": "7640000000048",
+      "weight": 3.1,
+      "description_sale": "Weidezaungeraet fuer bis zu 5 km Zaunlaenge, inkl. Netzteil, 12 V Anschluss."
+    },
+    {
+      "xml_id": "product_agri_tape",
+      "name": "Weidezaunband 200 m (40 mm)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 39.9,
+      "standard_price": 18.5,
+      "default_code": "LAND-BAND-200",
+      "barcode": "7640000000055",
+      "weight": 2.4,
+      "description_sale": "Leitfaehiges Weidezaunband, 200 m Rolle, 40 mm breit, UV-bestaendig."
+    },
+    {
+      "xml_id": "product_agri_bucket",
+      "name": "Traenkeeimer 20 Liter",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 14.9,
+      "standard_price": 6.1,
+      "default_code": "LAND-EIMER-20",
+      "barcode": "7640000000062",
+      "weight": 0.9
+    },
+    {
+      "xml_id": "product_fishing_rod",
+      "name": "Rute Alpine Fly 9ft #5",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 329.0,
+      "standard_price": 168.0,
+      "default_code": "FISCH-RUTE-AF95",
+      "barcode": "7640000000079",
+      "weight": 0.4,
+      "description_sale": "Fliegenrute 9 Fuss, Klasse 5, 4-teilig mit Transportfutteral."
+    },
+    {
+      "xml_id": "product_fishing_reel",
+      "name": "Fliegenrolle Clearwater 5/6",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 139.0,
+      "standard_price": 68.0,
+      "default_code": "FISCH-ROLLE-56",
+      "barcode": "7640000000086",
+      "weight": 0.3
+    },
+    {
+      "xml_id": "product_fishing_net",
+      "name": "Landungsnetz Forelle 50 cm",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 49.9,
+      "standard_price": 21.0,
+      "default_code": "FISCH-NETZ-50",
+      "barcode": "7640000000093",
+      "weight": 0.7
+    },
+    {
+      "xml_id": "product_hunting_optics",
+      "name": "Jagdfernglas 10x42 ED",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 649.0,
+      "standard_price": 355.0,
+      "default_code": "JAGD-OPT-1042",
+      "barcode": "7640000000109",
+      "weight": 0.8,
+      "description_sale": "Jagdfernglas 10x42 mit ED-Glaesern, wasserdicht, inkl. Trageriemen."
+    },
+    {
+      "xml_id": "product_hunting_jacket",
+      "name": "Ansitzjacke Silent Forest",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 219.0,
+      "standard_price": 108.0,
+      "default_code": "JAGD-JACKE-SF",
+      "barcode": "7640000000116",
+      "weight": 1.2
+    },
+    {
+      "xml_id": "product_service_fulfillment",
+      "name": "Fulfillment- und Category-Management (Monatspauschale)",
+      "type": "service",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 2500.0,
+      "default_code": "SVC-FULFILL",
+      "description_sale": "Betrieb von Onlineshops inkl. Lagerlogistik, Category Management und Kundenservice."
+    }
+  ],
+  "crm_leads": [
+    {
+      "xml_id": "crm_lead_yonc",
+      "name": "Ausbau B2B-Partnerschaft YONC",
+      "type": "opportunity",
+      "partner_xmlid": "partner_yonc",
+      "expected_revenue": 48000.0,
+      "probability": 60.0,
+      "stage_xmlid": "crm.stage_lead2",
+      "priority": "2",
+      "description": "Erweiterung des Fachhandels-Sortiments und Anbindung an das YONC-Bestellsystem."
+    },
+    {
+      "xml_id": "crm_lead_supplier_saddle",
+      "name": "Rahmenvertrag Busse Reitsport",
+      "type": "opportunity",
+      "partner_xmlid": "partner_supplier_saddle",
+      "expected_revenue": 22000.0,
+      "probability": 40.0,
+      "stage_xmlid": "crm.stage_lead3",
+      "priority": "1",
+      "description": "Verhandlung ueber jaehrlichen Abnahmerahmen fuer Sattel und Reitbekleidung."
+    },
+    {
+      "xml_id": "crm_lead_fulfillment_lead",
+      "name": "Neukunde Fulfillment-Dienstleistung",
+      "type": "opportunity",
+      "contact_name": "Markus Frei",
+      "email_from": "markus.frei@example.ch",
+      "phone": "+41 44 555 12 34",
+      "expected_revenue": 30000.0,
+      "probability": 20.0,
+      "stage_xmlid": "crm.stage_lead1",
+      "description": "Interessent fuer schluesselfertiges E-Commerce-Fulfillment."
+    },
+    {
+      "xml_id": "crm_lead_hunting_shop",
+      "name": "Jagd-Sortiment erweitern",
+      "type": "opportunity",
+      "expected_revenue": 15000.0,
+      "probability": 75.0,
+      "stage_xmlid": "crm.stage_lead3",
+      "priority": "2",
+      "description": "Erweiterung des Jagd-Sortiments um Optik und Ansitzbekleidung."
+    }
+  ],
+  "purchase_orders": [
+    {
+      "xml_id": "po_riding",
+      "partner_xmlid": "partner_supplier_saddle",
+      "state": "sent",
+      "date_order": "2026-08-20 09:00:00",
+      "partner_ref": "BUSSE-2026-0815",
+      "lines": [
+        {"product_xmlid": "product_riding_boot", "qty": 60.0, "price_unit": 96.0, "description": "Reitstiefel Winterfell Classic"},
+        {"product_xmlid": "product_riding_saddle", "qty": 15.0, "price_unit": 720.0, "description": "Vielseitigkeitssattel FlexFit 17 Zoll"},
+        {"product_xmlid": "product_riding_helmet", "qty": 80.0, "price_unit": 74.0, "description": "Reithelm Safety Pro"}
+      ]
+    },
+    {
+      "xml_id": "po_agri",
+      "partner_xmlid": "partner_supplier_agri",
+      "state": "draft",
+      "date_order": "2026-09-01 14:30:00",
+      "partner_ref": "ROTH-99120",
+      "lines": [
+        {"product_xmlid": "product_agri_fence", "qty": 40.0, "price_unit": 132.0, "description": "Weidezaungeraet PowerFence 5000"},
+        {"product_xmlid": "product_agri_tape", "qty": 200.0, "price_unit": 18.5, "description": "Weidezaunband 200 m"},
+        {"product_xmlid": "product_agri_bucket", "qty": 300.0, "price_unit": 6.1, "description": "Traenkeeimer 20 Liter"}
+      ]
+    }
+  ],
+  "stock_quants": [
+    {"product_xmlid": "product_riding_boot", "qty": 142.0},
+    {"product_xmlid": "product_riding_saddle", "qty": 23.0},
+    {"product_xmlid": "product_agri_fence", "qty": 86.0},
+    {"product_xmlid": "product_agri_tape", "qty": 450.0},
+    {"product_xmlid": "product_fishing_rod", "qty": 64.0},
+    {"product_xmlid": "product_hunting_optics", "qty": 38.0}
+  ],
+  "invoices": [
+    {
+      "xml_id": "invoice_customer_yonc",
+      "move_type": "out_invoice",
+      "partner_xmlid": "partner_yonc",
+      "invoice_date": "2026-09-05",
+      "ref": "YONC-2026-0912",
+      "lines": [
+        {"product_xmlid": "product_riding_boot", "qty": 40.0, "price_unit": 189.0, "description": "Reitstiefel Winterfell Classic"},
+        {"product_xmlid": "product_riding_helmet", "qty": 50.0, "price_unit": 149.0, "description": "Reithelm Safety Pro"},
+        {"product_xmlid": "product_service_fulfillment", "qty": 1.0, "price_unit": 2500.0, "description": "Fulfillment- und Category-Management (September)"}
+      ]
+    },
+    {
+      "xml_id": "invoice_vendor_saddle",
+      "move_type": "in_invoice",
+      "partner_xmlid": "partner_supplier_saddle",
+      "invoice_date": "2026-08-28",
+      "ref": "BUSSE-RE-2026-4471",
+      "lines": [
+        {"product_xmlid": "product_riding_boot", "qty": 60.0, "price_unit": 96.0, "description": "Reitstiefel Winterfell Classic"},
+        {"product_xmlid": "product_riding_saddle", "qty": 15.0, "price_unit": 720.0, "description": "Vielseitigkeitssattel FlexFit 17 Zoll"}
+      ]
+    }
+  ],
+  "helpdesk_tickets": [
+    {
+      "xml_id": "ticket_return_boot",
+      "name": "Ruecksendung Reitstiefel - falsche Groesse",
+      "partner_xmlid": "partner_private",
+      "stage_xmlid": "helpdesk.stage_in_progress",
+      "priority": "2",
+      "description": "Kundin moechte die Reitstiefel Winterfell Classic in Groesse 39 gegen 40 tauschen."
+    },
+    {
+      "xml_id": "ticket_delivery_delay",
+      "name": "Lieferverzoegerung Weidezaungeraet",
+      "partner_xmlid": "partner_yonc",
+      "stage_xmlid": "helpdesk.stage_new",
+      "priority": "3",
+      "description": "B2B-Kunde fragt nach dem Liefertermin der offenen Weidezaungeraete."
+    },
+    {
+      "xml_id": "ticket_claim_optics",
+      "name": "Reklamation Jagdfernglas - Kratzer",
+      "partner_xmlid": "partner_private",
+      "stage_xmlid": "helpdesk.stage_solved",
+      "priority": "1",
+      "description": "Fernglas wies bei Lieferung Kratzer auf der Linse auf; Ersatz wurde versandt."
+    }
+  ],
+  "quotation": {
+    "xml_id": "quotation_yonc",
+    "partner_xmlid": "partner_yonc",
+    "state": "draft",
+    "lines": [
+      {"product_xmlid": "product_hunting_optics", "qty": 25.0, "description": "Jagdfernglas 10x42 ED (B2B-Konditionen)"},
+      {"product_xmlid": "product_hunting_jacket", "qty": 40.0, "description": "Ansitzjacke Silent Forest"},
+      {"product_xmlid": "product_service_fulfillment", "qty": 1.0, "description": "Fulfillment- und Category-Management"}
+    ]
+  },
+  "example_orders": [
+    {
+      "xml_id": "sale_order_private_1",
+      "partner_xmlid": "partner_private",
+      "state": "sent",
+      "date_order": "2026-09-08",
+      "lines": [
+        {"product_xmlid": "product_riding_boot", "qty": 1.0, "description": "Reitstiefel Winterfell Classic"},
+        {"product_xmlid": "product_riding_helmet", "qty": 1.0, "description": "Reithelm Safety Pro"}
+      ]
+    },
+    {
+      "xml_id": "sale_order_yonc_1",
+      "partner_xmlid": "partner_yonc",
+      "state": "sent",
+      "date_order": "2026-09-10",
+      "lines": [
+        {"product_xmlid": "product_agri_fence", "qty": 20.0, "description": "Weidezaungeraet PowerFence 5000"},
+        {"product_xmlid": "product_agri_tape", "qty": 100.0, "description": "Weidezaunband 200 m"}
+      ]
+    }
+  ]
+}

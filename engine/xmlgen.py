@@ -1,9 +1,9 @@
-"""Low-Level-Helfer, um Odoo-Demo-Daten-XML wohlgeformt zusammenzubauen.
+"""Low-level helpers to assemble well-formed Odoo demo data XML.
 
-Nutzt xml.etree.ElementTree statt String-Konkatenation, damit Wohlgeformtheit
-und korrektes Escaping (Anfuehrungszeichen/Sonderzeichen in Kundendaten wie
-Firmennamen) durch die stdlib garantiert sind, nicht durch manuelles f-string-
-Zusammensetzen.
+Uses xml.etree.ElementTree instead of string concatenation so that well-formedness
+and correct escaping (quotes/special characters in customer data such as
+company names) are guaranteed by the stdlib, not by manual f-string
+assembly.
 """
 from __future__ import annotations
 
