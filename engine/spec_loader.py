@@ -22,8 +22,13 @@ from .model import (
     Module,
     Partner,
     Product,
+    Project,
+    ProjectTask,
+    ProjectTaskStage,
     PurchaseOrder,
     PurchaseOrderLine,
+    QuotationTemplate,
+    QuotationTemplateLine,
     SaleOrder,
     SaleOrderLine,
     SpecError,
@@ -179,6 +184,29 @@ def load_sale_order(d: dict[str, Any]) -> SaleOrder:
     )
 
 
+def load_quotation_template(d: dict[str, Any]) -> QuotationTemplate:
+    xml_id = _get(d, "xml_id", "quotation_template", required=True)
+    where = f"quotation_template {xml_id}"
+    _reject_unknown(d, QuotationTemplate, where)
+    lines_raw = _get(d, "lines", where, required=True)
+    lines = [
+        QuotationTemplateLine(
+            product_xmlid=_get(ld, "product_xmlid", f"{where} line", required=True),
+            qty=_get(ld, "qty", f"{where} line", default=1.0),
+            description=_get(ld, "description", f"{where} line", default=None),
+        )
+        for ld in [_checked(x, QuotationTemplateLine, f"{where} line") for x in lines_raw]
+    ]
+    return QuotationTemplate(
+        xml_id=xml_id,
+        name=_get(d, "name", where, required=True),
+        lines=lines,
+        note=_get(d, "note", where, default=None),
+        number_of_days=_get(d, "number_of_days", where, default=None),
+        sequence=_get(d, "sequence", where, default=10),
+    )
+
+
 def load_crm_lead(d: dict[str, Any]) -> CrmLead:
     xml_id = _get(d, "xml_id", "crm_lead", required=True)
     where = f"crm_lead {xml_id}"
@@ -271,6 +299,51 @@ def load_helpdesk_ticket(d: dict[str, Any]) -> HelpdeskTicket:
     )
 
 
+def load_project_stage(d: dict[str, Any]) -> ProjectTaskStage:
+    xml_id = _get(d, "xml_id", "project_task_stage", required=True)
+    where = f"project_task_stage {xml_id}"
+    _reject_unknown(d, ProjectTaskStage, where)
+    return ProjectTaskStage(
+        xml_id=xml_id,
+        name=_get(d, "name", where, required=True),
+        sequence=_get(d, "sequence", where, default=10),
+        fold=_get(d, "fold", where, default=False),
+    )
+
+
+def load_project(d: dict[str, Any]) -> Project:
+    xml_id = _get(d, "xml_id", "project", required=True)
+    where = f"project {xml_id}"
+    _reject_unknown(d, Project, where)
+    return Project(
+        xml_id=xml_id,
+        name=_get(d, "name", where, required=True),
+        stage_xmlid=_get(d, "stage_xmlid", where, default=None),
+        partner_xmlid=_get(d, "partner_xmlid", where, default=None),
+        description=_get(d, "description", where, default=None),
+        date_start=_get(d, "date_start", where, default=None),
+        date_end=_get(d, "date_end", where, default=None),
+        privacy_visibility=_get(d, "privacy_visibility", where, default=None),
+    )
+
+
+def load_project_task(d: dict[str, Any]) -> ProjectTask:
+    xml_id = _get(d, "xml_id", "project_task", required=True)
+    where = f"project_task {xml_id}"
+    _reject_unknown(d, ProjectTask, where)
+    return ProjectTask(
+        xml_id=xml_id,
+        name=_get(d, "name", where, required=True),
+        project_xmlid=_get(d, "project_xmlid", where, required=True),
+        stage_xmlid=_get(d, "stage_xmlid", where, default=None),
+        partner_xmlid=_get(d, "partner_xmlid", where, default=None),
+        description=_get(d, "description", where, default=None),
+        priority=_get(d, "priority", where, default=None),
+        date_deadline=_get(d, "date_deadline", where, default=None),
+        allocated_hours=_get(d, "allocated_hours", where, default=None),
+    )
+
+
 def load_spec(d: dict[str, Any]) -> CustomerSpec:
     _reject_unknown(d, CustomerSpec, "spec")
     if "module" not in d:
@@ -292,6 +365,10 @@ def load_spec(d: dict[str, Any]) -> CustomerSpec:
         stock_quants=[load_stock_quant(x) for x in d.get("stock_quants", [])],
         invoices=[load_invoice(x) for x in d.get("invoices", [])],
         helpdesk_tickets=[load_helpdesk_ticket(x) for x in d.get("helpdesk_tickets", [])],
+        quotation_templates=[load_quotation_template(x) for x in d.get("quotation_templates", [])],
+        projects=[load_project(x) for x in d.get("projects", [])],
+        project_task_stages=[load_project_stage(x) for x in d.get("project_task_stages", [])],
+        project_tasks=[load_project_task(x) for x in d.get("project_tasks", [])],
         language=_get(d, "language", "spec", default=None),
         crm_team_name=_get(d, "crm_team_name", "spec", default=None),
         helpdesk_team_name=_get(d, "helpdesk_team_name", "spec", default=None),

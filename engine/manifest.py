@@ -19,6 +19,17 @@ LICENSE = "LGPL-3"
 DEMO_USER_LOGIN = "demo"
 DEMO_USER_PASSWORD = "demo"
 
+# Explicit localization module dependency per chart-of-accounts template code.
+# The localization MUST be declared as a dependency: otherwise
+# account.chart.template._load() installs it during data loading and resets the
+# transaction/registry mid-load (verified-patterns.md 4.11). Only verified codes
+# are listed (demand-driven growth); an unmapped code gets no dependency.
+CHART_TEMPLATE_MODULE = {
+    "ch": "l10n_ch",
+    "de_skr03": "l10n_de",
+    "de_skr04": "l10n_de",
+}
+
 
 def data_files(spec: CustomerSpec) -> list[str]:
     files = ["data/res_company_data.xml"]
@@ -30,6 +41,13 @@ def data_files(spec: CustomerSpec) -> list[str]:
         files.append("data/helpdesk_team_data.xml")
     if spec.partners:
         files.append("data/res_partner_data.xml")
+    # Task stages MUST exist before the projects that link them (type_ids).
+    if spec.project_task_stages:
+        files.append("data/project_task_stage_data.xml")
+    if spec.projects:
+        files.append("data/project_project_data.xml")
+    if spec.project_tasks:
+        files.append("data/project_task_data.xml")
     if spec.products:
         files.append("data/product_data.xml")
     if spec.boms:
@@ -48,6 +66,8 @@ def data_files(spec: CustomerSpec) -> list[str]:
         files.append("data/account_move_data.xml")
     if spec.helpdesk_tickets:
         files.append("data/helpdesk_ticket_data.xml")
+    if spec.quotation_templates:
+        files.append("data/sale_order_template_data.xml")
     if spec.quotation:
         files.append("data/sale_order_quotation_data.xml")
     if spec.example_orders:
@@ -76,13 +96,17 @@ def depends(spec: CustomerSpec) -> list[str]:
         # as "Invoicing" in the UI (verified-patterns.md 4.15).
         if spec.accounting_app == "full":
             deps.append("account_accountant")
-    # l10n_ch explicitly as a dependency so that account.chart.template._load()
-    # does not have to install the module during data loading (which would reset
-    # the transaction/registry mid-load, see account/models/chart_template.py).
-    if spec.company.chart_template == "ch":
-        deps.append("l10n_ch")
+    # l10n_ch/l10n_de explicitly as a dependency so that
+    # account.chart.template._load() does not have to install the module during
+    # data loading (which would reset the transaction/registry mid-load, see
+    # account/models/chart_template.py). See CHART_TEMPLATE_MODULE.
+    localization = CHART_TEMPLATE_MODULE.get(spec.company.chart_template or "")
+    if localization:
+        deps.append(localization)
     if spec.needs_helpdesk:
         deps.append("helpdesk")
+    if spec.needs_project:
+        deps.append("project")
     return deps
 
 

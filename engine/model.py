@@ -35,6 +35,14 @@ SAFE_PURCHASE_ORDER_STATES = {"draft", "sent"}
 # post_init_hook via action_post() (see verified-patterns.md 4.12).
 VALID_INVOICE_MOVE_TYPES = {"out_invoice", "in_invoice"}
 
+# project.task.priority: verified against addons/project/models/project_task.py
+# (Selection: '0' Low, '1' Medium, '2' High, '3' Urgent).
+VALID_TASK_PRIORITIES = {"0", "1", "2", "3"}
+
+# project.project.privacy_visibility: verified against
+# addons/project/models/project_project.py (Selection, required, default 'portal').
+VALID_PROJECT_PRIVACY = {"followers", "invited_users", "employees", "portal"}
+
 # Default demo-data language per country. Key is the lower-case ISO code taken
 # from the country xmlid suffix (e.g. "base.ch" -> "ch"). This is a primary
 # language per country; the spec's optional "language" field overrides it.
@@ -225,6 +233,42 @@ class SaleOrder:
 
 
 @dataclass
+class QuotationTemplateLine:
+    """``sale.order.template.line`` (module ``sale_management``).
+
+    Verified against addons/sale_management/models/sale_order_template_line.py:
+    a line without ``display_type`` must carry ``product_id`` AND
+    ``product_uom_id`` (SQL Constraint ``_accountable_product_id_required``);
+    ``product_uom_qty`` is required; ``name`` is the (translatable) description.
+    ``product_uom_id`` is normally computed from the product but is set
+    explicitly so the CHECK constraint can never race the compute.
+    """
+
+    product_xmlid: str
+    qty: float = 1.0
+    description: str | None = None
+
+
+@dataclass
+class QuotationTemplate:
+    """``sale.order.template`` = "Angebotsvorlage" (module ``sale_management``).
+
+    Verified against addons/sale_management/models/sale_order_template.py:
+    only ``name`` is required; ``company_id`` defaults to ``env.company``;
+    ``note`` (Terms and conditions) is Html/translatable; ``number_of_days`` is
+    the quotation validity. ``require_signature``/``require_payment`` are
+    computed from the company and are therefore not set.
+    """
+
+    xml_id: str
+    name: str
+    lines: list[QuotationTemplateLine]
+    note: str | None = None
+    number_of_days: int | None = None
+    sequence: int = 10
+
+
+@dataclass
 class CrmLead:
     """crm.lead (Community module crm). Verified: only name and type are
     required; stage_id/team_id/company_id are compute+store+readonly=False and
@@ -351,6 +395,81 @@ class HelpdeskTicket:
 
 
 @dataclass
+class ProjectTaskStage:
+    """``project.task.type`` = the task stages (Kanban columns) of a project.
+
+    Verified against addons/project/models/project_task.py: a task's ``stage_id``
+    is only valid for a project the stage is linked to (``project_ids`` /
+    ``project.type_ids``); ``stage_find``/``_compute_stage_id`` otherwise override
+    it. The builder therefore links every defined task stage to every project.
+    ``project.task.type`` has NO default records in 19.0 - the stages must be
+    created (unlike ``project.project.stage``, which ships as
+    ``project.project_project_stage_0..3``).
+    """
+
+    xml_id: str
+    name: str
+    sequence: int = 10
+    fold: bool = False
+
+
+@dataclass
+class Project:
+    """``project.project``. Verified against
+    addons/project/models/project_project.py: only ``name`` is required;
+    ``company_id`` is compute+store+readonly=False; ``stage_id`` references the
+    core ``project.project.stage`` records (``project.project_project_stage_*``);
+    ``privacy_visibility`` is required with default 'portal'. ``partner_id`` must
+    belong to the same company as the project (``_inverse_company_id``).
+    ``type_ids`` carries the project's task stages (linked by the builder)."""
+
+    xml_id: str
+    name: str
+    stage_xmlid: str | None = None
+    partner_xmlid: str | None = None
+    description: str | None = None
+    date_start: str | None = None
+    date_end: str | None = None
+    privacy_visibility: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.privacy_visibility is not None and self.privacy_visibility not in VALID_PROJECT_PRIVACY:
+            raise SpecError(
+                f"Project {self.xml_id!r}: privacy_visibility={self.privacy_visibility!r} "
+                f"invalid (allowed: {sorted(VALID_PROJECT_PRIVACY)}, see "
+                f"addons/project/models/project_project.py)."
+            )
+
+
+@dataclass
+class ProjectTask:
+    """``project.task``. Verified against
+    addons/project/models/project_task.py: only ``name`` is required;
+    ``project_id``/``stage_id``/``company_id`` are compute+store+readonly=False and
+    may be set. ``stage_id`` must be a stage linked to the task's project
+    (otherwise ``_compute_stage_id`` resets it). ``state`` is computed+store and
+    must NOT be set."""
+
+    xml_id: str
+    name: str
+    project_xmlid: str
+    stage_xmlid: str | None = None
+    partner_xmlid: str | None = None
+    description: str | None = None
+    priority: str | None = None
+    date_deadline: str | None = None
+    allocated_hours: float | None = None
+
+    def __post_init__(self) -> None:
+        if self.priority is not None and self.priority not in VALID_TASK_PRIORITIES:
+            raise SpecError(
+                f"ProjectTask {self.xml_id!r}: priority={self.priority!r} invalid "
+                f"(allowed: {sorted(VALID_TASK_PRIORITIES)}, see "
+                f"addons/project/models/project_task.py)."
+            )
+
+
+@dataclass
 class Module:
     technical_name: str
     title: str
@@ -374,6 +493,10 @@ class CustomerSpec:
     stock_quants: list[StockQuant] = field(default_factory=list)
     invoices: list[Invoice] = field(default_factory=list)
     helpdesk_tickets: list[HelpdeskTicket] = field(default_factory=list)
+    quotation_templates: list[QuotationTemplate] = field(default_factory=list)
+    projects: list[Project] = field(default_factory=list)
+    project_task_stages: list[ProjectTaskStage] = field(default_factory=list)
+    project_tasks: list[ProjectTask] = field(default_factory=list)
     # Demo-data language. None -> derived from the company country (see
     # derive_language). Overridable per spec (e.g. an English-only IT lead).
     language: str | None = None
@@ -440,6 +563,34 @@ class CustomerSpec:
         for ticket in self.helpdesk_tickets:
             if ticket.partner_xmlid:
                 _require(ticket.partner_xmlid, partner_ids, f"HelpdeskTicket {ticket.xml_id}: partner_xmlid")
+        for template in self.quotation_templates:
+            for line in template.lines:
+                _require(
+                    line.product_xmlid, product_ids,
+                    f"QuotationTemplate {template.xml_id}: line product_xmlid",
+                )
+        project_ids = {p.xml_id for p in self.projects}
+        task_stage_ids = {s.xml_id for s in self.project_task_stages}
+        if self.project_task_stages and not self.projects:
+            raise SpecError(
+                "project_task_stages present but no projects: a task stage is only "
+                "visible inside the projects it is linked to (project.task.type "
+                "user_id/project_ids); without a project it becomes a personal stage. "
+                "Add the project(s) or drop the stages."
+            )
+        for project in self.projects:
+            if project.partner_xmlid:
+                _require(project.partner_xmlid, partner_ids, f"Project {project.xml_id}: partner_xmlid")
+        for task in self.project_tasks:
+            _require(task.project_xmlid, project_ids, f"ProjectTask {task.xml_id}: project_xmlid")
+            if task.stage_xmlid:
+                _require(task.stage_xmlid, task_stage_ids, f"ProjectTask {task.xml_id}: stage_xmlid")
+            if task.partner_xmlid:
+                _require(task.partner_xmlid, partner_ids, f"ProjectTask {task.xml_id}: partner_xmlid")
+
+    @property
+    def needs_project(self) -> bool:
+        return bool(self.projects) or bool(self.project_task_stages) or bool(self.project_tasks)
 
     @property
     def needs_mrp(self) -> bool:

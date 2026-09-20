@@ -22,9 +22,18 @@ from .model import SAFE_PURCHASE_ORDER_STATES, SAFE_SALE_ORDER_STATES
 KNOWN_EXTERNAL_PREFIXES = (
     "base.", "uom.", "product.", "mrp.", "sale.", "account.",
     "crm.", "sales_team.", "purchase.", "stock.", "helpdesk.", "utm.",
+    "project.",
 )
 
 REF_ATTR_RE = re.compile(r"ref\(['\"]([^'\"]+)['\"]\)")
+
+# base_vat validates res.partner.vat with python-stdnum on create/write (the
+# account._check_vat inverse, verified base_vat/models/res_partner.py:104,106-164).
+# It is installed transitively via l10n_de, but NOT via l10n_ch - so an invalid
+# VAT only aborts the install for localizations that pull base_vat. The static
+# check below is therefore only applied when the manifest depends on one of them
+# (verified-patterns.md 4.19).
+BASE_VAT_LOCALIZATIONS = ("base_vat", "l10n_de")
 
 
 @dataclass
@@ -89,6 +98,10 @@ def validate_module(module_dir: Path) -> list[Finding]:
                                   f"(product.product._check_barcode_uniqueness would fail during installation)")
             )
 
+    if set(manifest.get("depends", [])) & set(BASE_VAT_LOCALIZATIONS):
+        for fname, root in trees.items():
+            _check_partner_vat(fname, root, findings)
+
     models_present: set[str] = set()
     has_chart_function = False
     for root in trees.values():
@@ -120,6 +133,14 @@ def validate_module(module_dir: Path) -> list[Finding]:
             "picking_type_id is required and computed from the company warehouse's "
             "manufacturing operation type (reference/verified-patterns.md 4.17)."
         ))
+    if "project.task" in models_present and "project.project" not in models_present:
+        findings.append(Finding(
+            "error",
+            "project.task records present, but no project.project - a task needs a project "
+            "(project_id; company_id/stage defaults are derived from it), "
+            "reference/verified-patterns.md 4.21."
+        ))
+    _check_project_task_stages(trees, findings)
 
     return findings
 
@@ -193,6 +214,15 @@ def _check_records(fname: str, root: ET.Element, defined_ids: set[str], findings
                     f"use quantity (reference/verified-patterns.md 4.13)."
                 ))
 
+            if model == "project.task" and name == "state":
+                findings.append(Finding(
+                    "error",
+                    f"{fname}: record {rec_id} (project.task) sets state directly. "
+                    f"state is compute+store (from stage_id/dependencies) and must not be "
+                    f"set; a new task is '01_in_progress' "
+                    f"(reference/verified-patterns.md 4.21)."
+                ))
+
         if model == "purchase.order":
             field_names = {f.get("name") for f in rec.findall("field")}
             if "picking_type_id" not in field_names:
@@ -227,3 +257,94 @@ def _check_ref(fname: str, rec_id: str, ref: str, defined_ids: set[str], finding
             "error",
             f"{fname}: record {rec_id} references {ref!r}, which is not an xml_id defined in the module."
         ))
+
+
+def _check_project_task_stages(trees: dict[str, ET.Element], findings: list[Finding]) -> None:
+    """A project.task's stage must be linked to its project via project.type_ids.
+
+    Verified: ``project.task._compute_stage_id`` resets any stage whose
+    ``project_ids`` does not contain the task's project (and ``stage_find`` only
+    searches the linked stages), so an unlinked stage silently falls back to the
+    project's default stage (verified-patterns.md 4.21)."""
+    linked: set[str] = set()
+    for root in trees.values():
+        for rec in root.iter("record"):
+            if rec.get("model") != "project.project":
+                continue
+            for f in rec.findall("field"):
+                if f.get("name") == "type_ids":
+                    linked.update(REF_ATTR_RE.findall(f.get("eval") or ""))
+    for fname, root in trees.items():
+        for rec in root.iter("record"):
+            if rec.get("model") != "project.task":
+                continue
+            for f in rec.findall("field"):
+                if f.get("name") == "stage_id" and f.get("ref") and f.get("ref") not in linked:
+                    findings.append(Finding(
+                        "error",
+                        f"{fname}: record {rec.get('id', '?')} (project.task) references "
+                        f"stage {f.get('ref')!r}, which is not linked to any project via "
+                        f"project.type_ids - _compute_stage_id would reset it "
+                        f"(reference/verified-patterns.md 4.21)."
+                    ))
+
+
+def _check_partner_vat(fname: str, root: ET.Element, findings: list[Finding]) -> None:
+    """Flag German/Austrian partner VAT numbers with an invalid check digit.
+
+    Only the two checksum algorithms verified against the Odoo 19.0 stdnum
+    dependency are implemented (DE = ISO 7064 Mod 11,10, AT = Luhn, see
+    verified-patterns.md 4.19); other countries are left to the real install.
+    """
+    for rec in root.iter("record"):
+        if rec.get("model") != "res.partner":
+            continue
+        vat = ""
+        for f in rec.findall("field"):
+            if f.get("name") == "vat" and f.text:
+                vat = f.text.strip()
+        upper = vat.upper()
+        if upper.startswith("DE") and not _is_valid_de_vat(vat):
+            findings.append(Finding(
+                "error",
+                f"{fname}: record {rec.get('id', '?')} (res.partner) has VAT {vat!r} with an "
+                f"invalid USt-IdNr checksum - base_vat would reject it during installation "
+                f"(reference/verified-patterns.md 4.19)."
+            ))
+        elif upper.startswith("ATU") and not _is_valid_at_uid(vat):
+            findings.append(Finding(
+                "error",
+                f"{fname}: record {rec.get('id', '?')} (res.partner) has VAT {vat!r} with an "
+                f"invalid Austrian UID checksum - base_vat would reject it during installation "
+                f"(reference/verified-patterns.md 4.19)."
+            ))
+
+
+def _is_valid_de_vat(vat: str) -> bool:
+    """German USt-IdNr: 9 digits, ISO 7064 Mod 11,10 (stdnum.de.vat / iso7064.mod_11_10)."""
+    number = re.sub(r"[ .\-/,]", "", vat.upper())
+    if number.startswith("DE"):
+        number = number[2:]
+    if len(number) != 9 or not number.isdigit() or number[0] == "0":
+        return False
+    checksum = 5
+    for digit in number:
+        checksum = (((checksum or 10) * 2) % 11 + int(digit)) % 10
+    return checksum == 1
+
+
+def _is_valid_at_uid(vat: str) -> bool:
+    """Austrian UID: U + 8 digits, last digit = (6 - luhn(number[1:-1])) % 10 (stdnum.at.uid)."""
+    number = re.sub(r"[ .\-/]", "", vat.upper())
+    if number.startswith("AT"):
+        number = number[2:]
+    if len(number) != 9 or number[0] != "U" or not number[1:].isdigit():
+        return False
+    return str((6 - _luhn_checksum(number[1:-1])) % 10) == number[-1]
+
+
+def _luhn_checksum(number: str) -> int:
+    digits = [int(c) for c in reversed(number)]
+    total = sum(digits[::2])
+    total += sum(sum(divmod(d * 2, 10)) for d in digits[1::2])
+    return total % 10

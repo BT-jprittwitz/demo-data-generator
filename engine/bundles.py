@@ -37,12 +37,16 @@ SECTION_ORDER: tuple[str, ...] = (
     "boms",
     "manufacturing_orders",
     "quotation",
+    "quotation_templates",
     "example_orders",
     "crm_leads",
     "purchase_orders",
     "stock_quants",
     "invoices",
     "helpdesk_tickets",
+    "projects",
+    "project_task_stages",
+    "project_tasks",
 )
 
 
@@ -81,10 +85,12 @@ BUNDLES: dict[str, Bundle] = {
     "sales": Bundle(
         id="sales",
         label="Sales / quotations",
-        sections=("quotation", "example_orders"),
+        sections=("quotation", "quotation_templates", "example_orders"),
         apps=("sale_management",),
         requires=("products", "contacts"),
-        relevant_when="quotes and sales orders to customers.",
+        relevant_when=(
+            "quotes, sales orders and reusable quotation templates to customers."
+        ),
     ),
     "crm": Bundle(
         id="crm",
@@ -93,6 +99,17 @@ BUNDLES: dict[str, Bundle] = {
         apps=("crm",),
         requires=("contacts",),
         relevant_when="a lead/opportunity pipeline before or alongside quoting.",
+    ),
+    "project": Bundle(
+        id="project",
+        label="Projects",
+        sections=("projects", "project_task_stages", "project_tasks"),
+        apps=("project",),
+        requires=("contacts",),
+        relevant_when=(
+            "delivery/implementation work is tracked as projects with tasks and "
+            "stages (services, construction, IT rollout, ...)."
+        ),
     ),
     "purchase": Bundle(
         id="purchase",

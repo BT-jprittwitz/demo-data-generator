@@ -27,8 +27,12 @@ Foreign xmlids (e.g. `base.ch`, `crm.stage_lead1`) are emitted 1:1 as `ref`.
   "stock_quants": [ ... ],
   "invoices": [ ... ],
   "helpdesk_tickets": [ ... ],
-  "quotation": { ... },           // one quotation/sales-order template
-  "example_orders": [ ... ]       // example sales orders
+  "quotation": { ... },           // one draft quotation (sale.order)
+  "quotation_templates": [ ... ], // reusable sale.order.template ("Angebotsvorlagen")
+  "example_orders": [ ... ],      // example sales orders
+  "projects": [ ... ],            // project.project
+  "project_task_stages": [ ... ], // project.task.type (task stages)
+  "project_tasks": [ ... ]        // project.task
 }
 ```
 
@@ -126,10 +130,40 @@ The partner must belong to the demo company.
 `state` default `sent` (only `draft`/`sent`), optional `date_order`.
 `quotation` is written without, `example_orders` with `noupdate`.
 
+## `quotation_templates[]`
+
+`xml_id`, `name` (required); `lines[]` with `product_xmlid`, optional `qty`
+(default 1.0) and `description`; optional `note` (terms and conditions),
+`number_of_days` (validity), `sequence`. Creates `sale.order.template`
+("Angebotsvorlagen", see verified-patterns 4.20). Needs the `sales` bundle.
+The products must be `sale_ok` and belong to the demo company.
+
+## `projects[]`, `project_task_stages[]`, `project_tasks[]`
+
+`projects`: `xml_id`, `name` (required); optional `partner_xmlid` (customer),
+`stage_xmlid` (a `project.project.stage`, e.g.
+`project.project_project_stage_1`), `description`, `date_start`, `date_end`,
+`privacy_visibility` (`followers` | `invited_users` | `employees` | `portal`).
+
+`project_task_stages`: `xml_id`, `name` (required); optional `sequence`
+(default 10), `fold`. Task stages must be declared together with at least one
+project (otherwise they would become personal stages of the installer).
+
+`project_tasks`: `xml_id`, `name`, `project_xmlid` (required); optional
+`stage_xmlid` (must be a defined task stage - the builder links every stage to
+every project), `partner_xmlid`, `description`, `priority`
+(`0`..`3`), `date_deadline`, `allocated_hours`.
+
+Own bundle `project` (app `project`, requires `contacts`); creates the data
+files `project_task_stage_data.xml`, `project_project_data.xml`,
+`project_task_data.xml` in that order. See verified-patterns 4.21.
+
 ## What static validation rejects
 
 `engine/validate.py` + `engine/model.py` enforce among other things: unknown
 `product.type`, unsafe `sale.order` states, unsafe `purchase.order` state,
-`account.move` with `state`, `stock.quant` with `inventory_quantity`,
-`standard_price` without company context, duplicate barcodes, dangling
-`xml_id` references, missing manifest files.
+`account.move` with `state`, `project.task` with `state`, `stock.quant` with
+`inventory_quantity`, `standard_price` without company context, duplicate
+barcodes, a `project.task` whose stage is not linked via `project.type_ids`,
+`project.task` without `project.project`, dangling `xml_id` references, missing
+manifest files.

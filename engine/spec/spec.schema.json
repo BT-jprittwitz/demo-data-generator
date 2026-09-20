@@ -516,6 +516,150 @@
         "name"
       ]
     },
+    "QuotationTemplateLine": {
+      "type": "object",
+      "properties": {
+        "product_xmlid": {
+          "type": "string"
+        },
+        "qty": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "product_xmlid"
+      ]
+    },
+    "QuotationTemplate": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QuotationTemplateLine"
+          }
+        },
+        "note": {
+          "type": "string"
+        },
+        "number_of_days": {
+          "type": "integer"
+        },
+        "sequence": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name",
+        "lines"
+      ]
+    },
+    "Project": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "stage_xmlid": {
+          "type": "string"
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "date_start": {
+          "type": "string"
+        },
+        "date_end": {
+          "type": "string"
+        },
+        "privacy_visibility": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name"
+      ]
+    },
+    "ProjectTaskStage": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "sequence": {
+          "type": "integer"
+        },
+        "fold": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name"
+      ]
+    },
+    "ProjectTask": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "project_xmlid": {
+          "type": "string"
+        },
+        "stage_xmlid": {
+          "type": "string"
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "date_deadline": {
+          "type": "string"
+        },
+        "allocated_hours": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name",
+        "project_xmlid"
+      ]
+    },
     "CustomerSpec": {
       "type": "object",
       "properties": {
@@ -586,6 +730,30 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/HelpdeskTicket"
+          }
+        },
+        "quotation_templates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QuotationTemplate"
+          }
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Project"
+          }
+        },
+        "project_task_stages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProjectTaskStage"
+          }
+        },
+        "project_tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProjectTask"
           }
         },
         "language": {

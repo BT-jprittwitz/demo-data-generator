@@ -46,6 +46,17 @@ data where possible) and keys **all** demo data to it:
 5. `bt_demo_nishcom` (`examples/nishcom_ag.json`) — first multi-app/Enterprise case:
    company + chart of accounts `ch`, product range, CRM, purchasing, inventory, posted
    customer/vendor invoices, helpdesk. Verified against Enterprise 19.0.
+6. `bt_demo_hold_spada` (`examples/hold_spada.json`) — German IT system house
+   (HOLD & SPADA IT-Solutions GmbH, Unterschreissheim): first `de_skr04` chart of
+   accounts, hardware + IT-service catalog, CRM, purchasing, inventory, posted
+   invoices/bills, helpdesk. Verified against Enterprise 19.0. New landmine
+   found and documented: partner VAT checksum validation via `base_vat`
+   (pulled in by `l10n_de`, verified-patterns.md 4.19).
+7. Same `bt_demo_hold_spada` extended with the new building blocks
+   **quotation templates** (`sale.order.template`, "Angebotsvorlagen") and
+   **projects** (`project.project` + `project.task` + task stages). Verified
+   against Enterprise 19.0 and by the spec-aware Postgres assertions of the
+   smoke test (see `install-test-protocol.md`). New verified patterns 4.20/4.21.
 
 ## Reference material
 

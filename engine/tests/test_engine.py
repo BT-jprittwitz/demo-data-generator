@@ -18,8 +18,13 @@ from engine.model import (
     Module,
     Partner,
     Product,
+    Project,
+    ProjectTask,
+    ProjectTaskStage,
     PurchaseOrder,
     PurchaseOrderLine,
+    QuotationTemplate,
+    QuotationTemplateLine,
     SaleOrder,
     SaleOrderLine,
     SpecError,
@@ -29,7 +34,7 @@ from engine.docker.test_install import analyze_log
 from engine.manifest import DEMO_USER_LOGIN, DEMO_USER_PASSWORD, depends, render_hooks_py
 from engine.schema import build_schema
 from engine.spec_loader import load_spec
-from engine.validate import validate_module
+from engine.validate import _is_valid_at_uid, _is_valid_de_vat, validate_module
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE_SPEC_PATH = REPO_ROOT / "examples" / "muster_foerdertechnik.json"
@@ -264,6 +269,17 @@ class ErpBlockTests(unittest.TestCase):
         self.assertIn("account", depends(spec_invoicing))
         self.assertNotIn("account_accountant", depends(spec_invoicing))
 
+    def test_german_chart_template_pulls_l10n_de(self):
+        # The localization MUST be declared as a dependency, otherwise
+        # account.chart.template._load() installs it mid-load and resets the
+        # transaction/registry (verified-patterns.md 4.11).
+        for template in ("de_skr03", "de_skr04"):
+            spec = self._erp_spec(company=Company(
+                name="Test AG", street="Teststrasse 1", city="Teststadt", zip="1234",
+                country_xmlid="base.de", chart_template=template,
+            ))
+            self.assertIn("l10n_de", depends(spec), template)
+
     def test_validate_flags_unsafe_purchase_state(self):
         with TemporaryDirectory() as tmp:
             module_dir = Path(tmp) / "bt_demo_broken_po"
@@ -333,6 +349,126 @@ class ErpBlockTests(unittest.TestCase):
             )
             findings = validate_module(module_dir)
             self.assertTrue(any("stock.warehouse" in f.message for f in findings))
+
+
+class ProjectAndTemplateTests(unittest.TestCase):
+    """sale.order.template ("Angebotsvorlage") and project.project/task/stage."""
+
+    def _spec(self, **overrides) -> CustomerSpec:
+        base = dict(
+            module=Module(technical_name="bt_demo_proj", title="P", summary="P", description="P"),
+            company=Company(name="Test AG", street="Weg 1", city="Stadt", zip="1",
+                            country_xmlid="base.de"),
+            partners=[
+                Partner(xml_id="p1", name="Kunde AG", country_xmlid="base.de",
+                        street="Weg 1", city="Stadt", zip="1111", customer_rank=1),
+            ],
+            products=[
+                Product(xml_id="prod_a", name="Ware A", type="consu", sale_ok=True,
+                        purchase_ok=True, list_price=100.0),
+            ],
+        )
+        base.update(overrides)
+        return CustomerSpec(**base)
+
+    def test_quotation_template_requires_known_product(self):
+        with self.assertRaises(SpecError):
+            self._spec(quotation_templates=[
+                QuotationTemplate(xml_id="t1", name="Paket", lines=[
+                    QuotationTemplateLine(product_xmlid="missing"),
+                ]),
+            ])
+
+    def test_rejects_invalid_task_priority(self):
+        with self.assertRaises(SpecError):
+            ProjectTask(xml_id="t1", name="Task", project_xmlid="prj", priority="9")
+
+    def test_rejects_invalid_privacy_visibility(self):
+        with self.assertRaises(SpecError):
+            Project(xml_id="prj", name="Projekt", privacy_visibility="world")
+
+    def test_task_stages_require_a_project(self):
+        with self.assertRaises(SpecError):
+            self._spec(project_task_stages=[ProjectTaskStage(xml_id="s1", name="Neu")])
+
+    def test_rejects_dangling_task_stage(self):
+        with self.assertRaises(SpecError):
+            self._spec(
+                projects=[Project(xml_id="prj", name="Projekt")],
+                project_tasks=[ProjectTask(xml_id="t1", name="Task", project_xmlid="prj",
+                                           stage_xmlid="missing")],
+            )
+
+    def test_spec_builds_project_and_template_files_and_pulls_project_app(self):
+        spec = self._spec(
+            quotation_templates=[
+                QuotationTemplate(xml_id="tpl1", name="Arbeitsplatz", number_of_days=30,
+                                  note="Konditionen", lines=[
+                                      QuotationTemplateLine(product_xmlid="prod_a", qty=2.0,
+                                                            description="Ware A")]),
+            ],
+            projects=[Project(xml_id="prj1", name="Projekt A", partner_xmlid="p1",
+                              stage_xmlid="project.project_project_stage_1")],
+            project_task_stages=[ProjectTaskStage(xml_id="stage1", name="Neu")],
+            project_tasks=[ProjectTask(xml_id="task1", name="Aufgabe 1", project_xmlid="prj1",
+                                       stage_xmlid="stage1", partner_xmlid="p1", priority="2")],
+        )
+        self.assertIn("project", depends(spec))
+        with TemporaryDirectory() as tmp:
+            module_dir = write_module_dir(spec, Path(tmp))
+            findings = validate_module(module_dir)
+            errors = [f for f in findings if f.level == "error"]
+            self.assertEqual(errors, [], f"Unexpected validation errors: {errors}")
+            data_dir = module_dir / "data"
+            for name in ("sale_order_template_data.xml", "project_task_stage_data.xml",
+                         "project_project_data.xml", "project_task_data.xml"):
+                self.assertTrue((data_dir / name).exists(), f"{name} is missing")
+            template = (data_dir / "sale_order_template_data.xml").read_text(encoding="utf-8")
+            self.assertIn("uom.product_uom_unit", template)
+            project = (data_dir / "project_project_data.xml").read_text(encoding="utf-8")
+            self.assertIn("Command.link(ref('stage1'))", project)
+
+    def test_validate_flags_task_stage_not_linked_to_project(self):
+        with TemporaryDirectory() as tmp:
+            module_dir = Path(tmp) / "bt_demo_unlinked_stage"
+            data_dir = module_dir / "data"
+            data_dir.mkdir(parents=True)
+            (module_dir / "__manifest__.py").write_text(
+                '{"data": ["data/stage.xml", "data/project.xml", "data/task.xml"]}',
+                encoding="utf-8",
+            )
+            (data_dir / "stage.xml").write_text(
+                '<?xml version="1.0"?><odoo><record id="s1" model="project.task.type">'
+                '<field name="name">Neu</field></record></odoo>',
+                encoding="utf-8",
+            )
+            (data_dir / "project.xml").write_text(
+                '<?xml version="1.0"?><odoo><record id="prj" model="project.project">'
+                '<field name="name">P</field></record></odoo>',
+                encoding="utf-8",
+            )
+            (data_dir / "task.xml").write_text(
+                '<?xml version="1.0"?><odoo><record id="t1" model="project.task">'
+                '<field name="name">T</field><field name="project_id" ref="prj"/>'
+                '<field name="stage_id" ref="s1"/></record></odoo>',
+                encoding="utf-8",
+            )
+            findings = validate_module(module_dir)
+            self.assertTrue(any("type_ids" in f.message for f in findings))
+
+    def test_validate_flags_project_task_without_project(self):
+        with TemporaryDirectory() as tmp:
+            module_dir = Path(tmp) / "bt_demo_task_no_project"
+            data_dir = module_dir / "data"
+            data_dir.mkdir(parents=True)
+            (module_dir / "__manifest__.py").write_text('{"data": ["data/task.xml"]}', encoding="utf-8")
+            (data_dir / "task.xml").write_text(
+                '<?xml version="1.0"?><odoo><record id="t1" model="project.task">'
+                '<field name="name">T</field></record></odoo>',
+                encoding="utf-8",
+            )
+            findings = validate_module(module_dir)
+            self.assertTrue(any("project.project" in f.message for f in findings))
 
 
 class LanguageTests(unittest.TestCase):
@@ -413,6 +549,48 @@ class DemoUserTests(unittest.TestCase):
 
     def test_demo_user_does_not_trigger_signup_email(self):
         self.assertIn("no_reset_password=True", self._hooks())
+
+
+class VatValidationTests(unittest.TestCase):
+    """Partner VAT checksum check active with base_vat (verified-patterns.md 4.19)."""
+
+    def _write_partner_module(self, tmp: str, depends: list[str], vat: str) -> Path:
+        module_dir = Path(tmp) / "bt_demo_vat"
+        data_dir = module_dir / "data"
+        data_dir.mkdir(parents=True)
+        (module_dir / "__manifest__.py").write_text(
+            repr({"depends": depends, "data": ["data/res_partner_data.xml"]}), encoding="utf-8"
+        )
+        (data_dir / "res_partner_data.xml").write_text(
+            '<?xml version="1.0"?><odoo><record id="p1" model="res.partner">'
+            f'<field name="vat">{vat}</field></record></odoo>',
+            encoding="utf-8",
+        )
+        return module_dir
+
+    def test_de_vat_checksum_matches_stdnum(self):
+        self.assertTrue(_is_valid_de_vat("DE118273454"))
+        self.assertTrue(_is_valid_de_vat("DE174829302"))
+        self.assertFalse(_is_valid_de_vat("DE118273456"))
+        self.assertFalse(_is_valid_de_vat("DE811234567"))
+
+    def test_at_uid_checksum_matches_stdnum(self):
+        self.assertTrue(_is_valid_at_uid("ATU22334454"))
+        self.assertTrue(_is_valid_at_uid("ATU13585627"))
+        self.assertFalse(_is_valid_at_uid("ATU12345678"))
+
+    def test_invalid_german_vat_is_flagged_with_l10n_de(self):
+        with TemporaryDirectory() as tmp:
+            module_dir = self._write_partner_module(tmp, ["account", "l10n_de"], "DE118273456")
+            findings = validate_module(module_dir)
+            self.assertTrue(any("4.19" in f.message for f in findings))
+
+    def test_invalid_german_vat_is_not_flagged_without_base_vat(self):
+        # l10n_ch does not pull base_vat, so nishcom's VAT is not validated.
+        with TemporaryDirectory() as tmp:
+            module_dir = self._write_partner_module(tmp, ["account", "l10n_ch"], "DE118273456")
+            findings = validate_module(module_dir)
+            self.assertFalse(any("4.19" in f.message for f in findings))
 
 
 class InstallLogTests(unittest.TestCase):

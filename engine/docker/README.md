@@ -66,3 +66,17 @@ uniquely named DB, scans the log for `Traceback` / `CRITICAL` and the
 `Module <name> loaded` marker, prints the complete log on failure, and drops the
 DB on success. Defaults: `--compose-dir ../odoodemo-local`, `--service web`
 (override both for a different instance).
+
+After a clean install it additionally runs **spec-aware Postgres data
+assertions**: the spec is auto-detected in `examples/` by module name (or passed
+via `--spec <path>`), and `engine/verify.py` derives per-model record counts from
+`ir_model_data` plus semantic checks (posted invoices, `standard_price`
+company key, tasks have a stage). This catches data that the log cannot: a
+`post_init_hook` error can be swallowed while Odoo still prints
+`Module <name> loaded`. A failed assertion keeps the DB and returns 1.
+`--no-verify` skips the assertions.
+
+```bash
+python3 engine/docker/test_install.py --module bt_demo_hold_spada
+python3 engine/docker/test_install.py --module bt_demo_hold_spada --spec examples/hold_spada.json
+```

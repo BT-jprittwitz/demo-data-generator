@@ -1,0 +1,519 @@
+{
+  "module": {
+    "technical_name": "bt_demo_hold_spada",
+    "title": "Demo Data - HOLD & SPADA IT-Solutions GmbH (CRM, Sales, Purchase, Inventory, Accounting, Helpdesk)",
+    "category": "Sales",
+    "summary": "ERP demo for a German IT system house: own company with the German chart of accounts (SKR04), an IT hardware and service assortment, vendors, stock, a CRM pipeline, posted customer/vendor invoices and IT support tickets (helpdesk).",
+    "description": "Sample demo-data module for HOLD & SPADA IT-Solutions GmbH (Unterschleißheim near Munich, Germany), an IT system house serving crafts/construction, camping/hotel and industrial customers. It creates 1 new company including the German chart of accounts (l10n_de, SKR04), 7 contacts (IT distributors and business customers), 13 products (hardware such as notebooks, servers, switches and firewalls as well as services such as managed IT, ERP consulting and cloud backup), 4 CRM opportunities, 2 purchase orders, stock for 9 products, 3 posted invoices/bills (posted in the post_init_hook), 4 helpdesk tickets, 1 quotation and 2 example sales orders."
+  },
+  "accounting_app": "full",
+  "company": {
+    "xml_id": "demo_company",
+    "name": "HOLD & SPADA IT-Solutions GmbH",
+    "street": "Freisinger Straße 9",
+    "city": "Unterschleißheim",
+    "zip": "85716",
+    "country_xmlid": "base.de",
+    "currency_xmlid": "base.EUR",
+    "chart_template": "de_skr04"
+  },
+  "partners": [
+    {
+      "xml_id": "partner_supplier_hardware",
+      "name": "Nexus IT-Distribution GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE118273454",
+      "street": "Hafenstraße 12",
+      "city": "Hamburg",
+      "zip": "20457",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_supplier_network",
+      "name": "Alpen Netzwerktechnik AG",
+      "country_xmlid": "base.at",
+      "vat": "ATU22334454",
+      "street": "Industriezeile 5",
+      "city": "Linz",
+      "zip": "4020",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_supplier_software",
+      "name": "Softwareallianz Deutschland GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE174829302",
+      "street": "Rheinufer 8",
+      "city": "Düsseldorf",
+      "zip": "40213",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_customer_bau",
+      "name": "Baumeister Huber GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE205618738",
+      "street": "Landsberger Straße 44",
+      "city": "München",
+      "zip": "80339",
+      "supplier_rank": 0,
+      "customer_rank": 1
+    },
+    {
+      "xml_id": "partner_customer_hotel",
+      "name": "Camping Resort Chiemsee GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE247102931",
+      "street": "Seestraße 1",
+      "city": "Prien am Chiemsee",
+      "zip": "83209",
+      "supplier_rank": 0,
+      "customer_rank": 1
+    },
+    {
+      "xml_id": "partner_customer_prod",
+      "name": "Müller Präzisionsteile GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE198374621",
+      "street": "Gewerbering 7",
+      "city": "Augsburg",
+      "zip": "86156",
+      "supplier_rank": 0,
+      "customer_rank": 1
+    },
+    {
+      "xml_id": "partner_private",
+      "name": "Thomas Berger",
+      "country_xmlid": "base.de",
+      "street": "Lindenweg 3",
+      "city": "Olching",
+      "zip": "82140",
+      "is_company": false,
+      "supplier_rank": 0,
+      "customer_rank": 1
+    }
+  ],
+  "products": [
+    {
+      "xml_id": "product_notebook",
+      "name": "Business-Notebook 14 Zoll (Core i5, 16 GB, 512 GB SSD)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 1099.0,
+      "standard_price": 815.0,
+      "default_code": "NB-14-I5-16",
+      "barcode": "4012345000017",
+      "weight": 1.4,
+      "description_sale": "Leistungsstarkes Business-Notebook für den mobilen Einsatz, inklusive Windows 11 Pro und 3 Jahren Vor-Ort-Service."
+    },
+    {
+      "xml_id": "product_docking",
+      "name": "Dockingstation USB-C Pro (DisplayPort, LAN, 90 W)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 189.0,
+      "standard_price": 112.0,
+      "default_code": "DOCK-USBC-PRO",
+      "barcode": "4012345000024",
+      "weight": 0.5,
+      "description_sale": "Dockingstation mit zwei DisplayPort-Ausgängen, Gigabit-LAN und 90-W-Netzteil für Notebooks."
+    },
+    {
+      "xml_id": "product_monitor",
+      "name": "Monitor 27 Zoll QHD IPS (höhenverstellbar)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 329.0,
+      "standard_price": 214.0,
+      "default_code": "MON-27-QHD",
+      "barcode": "4012345000031",
+      "weight": 5.6,
+      "description_sale": "27-Zoll-QHD-Monitor mit IPS-Panel, USB-C und ergonomischem Standfuß."
+    },
+    {
+      "xml_id": "product_server",
+      "name": "Rackserver 1U (Xeon Silver, 32 GB ECC, 2x 960 GB SSD)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 3490.0,
+      "standard_price": 2740.0,
+      "default_code": "SRV-1U-XS32",
+      "barcode": "4012345000048",
+      "weight": 14.0,
+      "description_sale": "1U-Rackserver für Virtualisierung und ERP-Workloads, redundante Netzteile, iDRAC-Fernwartung."
+    },
+    {
+      "xml_id": "product_switch",
+      "name": "Managed Switch 24 Port Gigabit",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 429.0,
+      "standard_price": 268.0,
+      "default_code": "SW-24-GBE",
+      "barcode": "4012345000055",
+      "weight": 2.8,
+      "description_sale": "Managed Layer-2-Switch mit 24 Gigabit-Ports, 4 SFP-Uplinks und VLAN-Unterstützung."
+    },
+    {
+      "xml_id": "product_accesspoint",
+      "name": "WLAN Access Point Wi-Fi 6 (Deckenmontage)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 249.0,
+      "standard_price": 148.0,
+      "default_code": "AP-WIFI6",
+      "barcode": "4012345000062",
+      "weight": 0.6,
+      "description_sale": "Wi-Fi-6-Access-Point für Deckenmontage, PoE-fähig, zentral verwaltbar."
+    },
+    {
+      "xml_id": "product_firewall",
+      "name": "Firewall-Appliance Enterprise (1 Jahr Lizenz)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 1980.0,
+      "standard_price": 1420.0,
+      "default_code": "FW-ENT-1Y",
+      "barcode": "4012345000079",
+      "weight": 3.2,
+      "description_sale": "Next-Generation-Firewall inklusive 1 Jahr UTM-Lizenz (IPS, Webfilter, VPN)."
+    },
+    {
+      "xml_id": "product_nas",
+      "name": "NAS-System 8 TB (RAID 5, 4 Bays)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 1249.0,
+      "standard_price": 892.0,
+      "default_code": "NAS-8TB-4B",
+      "barcode": "4012345000086",
+      "weight": 7.4,
+      "description_sale": "Netzwerkspeicher mit 4 Einschüben, 8 TB nutzbar im RAID 5 und integrierter Backup-Software."
+    },
+    {
+      "xml_id": "product_toner",
+      "name": "Toner-Kartusche Schwarz (Großformat)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": true,
+      "list_price": 119.0,
+      "standard_price": 64.0,
+      "default_code": "TON-SW-XL",
+      "barcode": "4012345000093",
+      "weight": 0.9,
+      "description_sale": "Tonerkartusche in Großformat für die gängigen Business-Laserdrucker, Reichweite ca. 12.000 Seiten."
+    },
+    {
+      "xml_id": "product_svc_managed",
+      "name": "Managed IT-Service (Monatspauschale)",
+      "type": "service",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 1490.0,
+      "default_code": "SVC-MANAGED",
+      "description_sale": "Laufende Betreuung inklusive Monitoring, Patch-Management, Service-Desk und monatlicher Reporting-Pauschale."
+    },
+    {
+      "xml_id": "product_svc_erp",
+      "name": "ERP-Beratung (Stundensatz)",
+      "type": "service",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 165.0,
+      "default_code": "SVC-ERP-H",
+      "description_sale": "ERP-Konzeption, Einführung und Workshops zum Stundensatz (Remote oder vor Ort)."
+    },
+    {
+      "xml_id": "product_svc_cloud",
+      "name": "Cloud-Backup (Monatspauschale)",
+      "type": "service",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 290.0,
+      "default_code": "SVC-CLOUD-BKP",
+      "description_sale": "Automatisches Cloud-Backup der Server-, Notebook- und Microsoft-365-Daten inkl. Monitoring und Wiederherstellungstests."
+    },
+    {
+      "xml_id": "product_svc_network",
+      "name": "Netzwerkprojekt (Pauschale)",
+      "type": "service",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 4500.0,
+      "default_code": "SVC-NET-PROJ",
+      "description_sale": "Planung, Einrichtung und Inbetriebnahme einer Netzwerk- und WLAN-Infrastruktur als Festpauschale."
+    }
+  ],
+  "crm_leads": [
+    {
+      "xml_id": "crm_lead_erp_bau",
+      "name": "ERP-Einführung Baumeister Huber",
+      "type": "opportunity",
+      "partner_xmlid": "partner_customer_bau",
+      "expected_revenue": 85000.0,
+      "probability": 60.0,
+      "stage_xmlid": "crm.stage_lead2",
+      "priority": "2",
+      "description": "Ablösung der bestehenden Handwerkersoftware durch ein integriertes ERP inklusive Zeiterfassung und Materialwirtschaft."
+    },
+    {
+      "xml_id": "crm_lead_managed_hotel",
+      "name": "Managed-Services-Vertrag Camping Resort Chiemsee",
+      "type": "opportunity",
+      "partner_xmlid": "partner_customer_hotel",
+      "expected_revenue": 36000.0,
+      "probability": 45.0,
+      "stage_xmlid": "crm.stage_lead3",
+      "priority": "1",
+      "description": "Übernahme der kompletten IT-Betreuung inklusive Service-Desk, Monitoring und Cloud-Backup."
+    },
+    {
+      "xml_id": "crm_lead_m365",
+      "name": "Microsoft-365-Migration Neukunde",
+      "type": "opportunity",
+      "contact_name": "Sabine Krüger",
+      "email_from": "sabine.krueger@example.de",
+      "phone": "+49 89 555 12 34",
+      "expected_revenue": 18000.0,
+      "probability": 20.0,
+      "stage_xmlid": "crm.stage_lead1",
+      "description": "Interessentin für die Migration von lokalen Exchange-Postfächern zu Microsoft 365 inklusive Schulung."
+    },
+    {
+      "xml_id": "crm_lead_network_prod",
+      "name": "Netzwerk-Infrastruktur Müller Präzisionsteile",
+      "type": "opportunity",
+      "partner_xmlid": "partner_customer_prod",
+      "expected_revenue": 52000.0,
+      "probability": 70.0,
+      "stage_xmlid": "crm.stage_lead3",
+      "priority": "2",
+      "description": "Erneuerung der Netzwerk- und Firewall-Infrastruktur an zwei Produktionsstandorten."
+    }
+  ],
+  "purchase_orders": [
+    {
+      "xml_id": "po_hardware",
+      "partner_xmlid": "partner_supplier_hardware",
+      "state": "sent",
+      "date_order": "2026-08-25 09:30:00",
+      "partner_ref": "NEX-2026-4471",
+      "lines": [
+        {"product_xmlid": "product_notebook", "qty": 25.0, "price_unit": 815.0, "description": "Business-Notebook 14 Zoll (Core i5, 16 GB, 512 GB SSD)"},
+        {"product_xmlid": "product_docking", "qty": 40.0, "price_unit": 112.0, "description": "Dockingstation USB-C Pro (DisplayPort, LAN, 90 W)"},
+        {"product_xmlid": "product_monitor", "qty": 30.0, "price_unit": 214.0, "description": "Monitor 27 Zoll QHD IPS (höhenverstellbar)"}
+      ]
+    },
+    {
+      "xml_id": "po_network",
+      "partner_xmlid": "partner_supplier_network",
+      "state": "draft",
+      "date_order": "2026-09-02 11:00:00",
+      "partner_ref": "ALP-99301",
+      "lines": [
+        {"product_xmlid": "product_switch", "qty": 20.0, "price_unit": 268.0, "description": "Managed Switch 24 Port Gigabit"},
+        {"product_xmlid": "product_accesspoint", "qty": 35.0, "price_unit": 148.0, "description": "WLAN Access Point Wi-Fi 6 (Deckenmontage)"},
+        {"product_xmlid": "product_firewall", "qty": 10.0, "price_unit": 1420.0, "description": "Firewall-Appliance Enterprise (1 Jahr Lizenz)"}
+      ]
+    }
+  ],
+  "stock_quants": [
+    {"product_xmlid": "product_notebook", "qty": 48.0},
+    {"product_xmlid": "product_docking", "qty": 76.0},
+    {"product_xmlid": "product_monitor", "qty": 52.0},
+    {"product_xmlid": "product_server", "qty": 6.0},
+    {"product_xmlid": "product_switch", "qty": 41.0},
+    {"product_xmlid": "product_accesspoint", "qty": 88.0},
+    {"product_xmlid": "product_firewall", "qty": 12.0},
+    {"product_xmlid": "product_nas", "qty": 9.0},
+    {"product_xmlid": "product_toner", "qty": 240.0}
+  ],
+  "invoices": [
+    {
+      "xml_id": "invoice_customer_bau",
+      "move_type": "out_invoice",
+      "partner_xmlid": "partner_customer_bau",
+      "invoice_date": "2026-09-04",
+      "ref": "RE-2026-1042",
+      "lines": [
+        {"product_xmlid": "product_svc_erp", "qty": 40.0, "price_unit": 165.0, "description": "ERP-Beratung (Stunden September)"},
+        {"product_xmlid": "product_svc_managed", "qty": 1.0, "price_unit": 1490.0, "description": "Managed IT-Service (September)"},
+        {"product_xmlid": "product_notebook", "qty": 3.0, "price_unit": 1099.0, "description": "Business-Notebook 14 Zoll (Core i5, 16 GB, 512 GB SSD)"}
+      ]
+    },
+    {
+      "xml_id": "invoice_customer_hotel",
+      "move_type": "out_invoice",
+      "partner_xmlid": "partner_customer_hotel",
+      "invoice_date": "2026-09-08",
+      "ref": "RE-2026-1043",
+      "lines": [
+        {"product_xmlid": "product_switch", "qty": 8.0, "price_unit": 429.0, "description": "Managed Switch 24 Port Gigabit"},
+        {"product_xmlid": "product_accesspoint", "qty": 12.0, "price_unit": 249.0, "description": "WLAN Access Point Wi-Fi 6 (Deckenmontage)"},
+        {"product_xmlid": "product_svc_network", "qty": 1.0, "price_unit": 4500.0, "description": "Netzwerkprojekt WLAN-Erneuerung (Pauschale)"}
+      ]
+    },
+    {
+      "xml_id": "invoice_vendor_hardware",
+      "move_type": "in_invoice",
+      "partner_xmlid": "partner_supplier_hardware",
+      "invoice_date": "2026-08-30",
+      "ref": "NEX-RE-2026-8812",
+      "lines": [
+        {"product_xmlid": "product_notebook", "qty": 25.0, "price_unit": 815.0, "description": "Business-Notebook 14 Zoll (Core i5, 16 GB, 512 GB SSD)"},
+        {"product_xmlid": "product_docking", "qty": 40.0, "price_unit": 112.0, "description": "Dockingstation USB-C Pro (DisplayPort, LAN, 90 W)"},
+        {"product_xmlid": "product_monitor", "qty": 30.0, "price_unit": 214.0, "description": "Monitor 27 Zoll QHD IPS (höhenverstellbar)"}
+      ]
+    }
+  ],
+  "helpdesk_tickets": [
+    {
+      "xml_id": "ticket_network_outage",
+      "name": "Störung: Netzwerkausfall Standort München",
+      "partner_xmlid": "partner_customer_bau",
+      "stage_xmlid": "helpdesk.stage_in_progress",
+      "priority": "3",
+      "description": "Kompletter Netzwerkausfall im Bürogebäude seit heute Morgen; Switch-Neustart ohne Wirkung, Techniker ist vor Ort."
+    },
+    {
+      "xml_id": "ticket_notebook_defect",
+      "name": "Reklamation Notebook - Display defekt",
+      "partner_xmlid": "partner_private",
+      "stage_xmlid": "helpdesk.stage_new",
+      "priority": "2",
+      "description": "Das Display des Business-Notebooks zeigt Streifen; Garantieantrag beim Hersteller wurde angestoßen."
+    },
+    {
+      "xml_id": "ticket_onboarding",
+      "name": "Onboarding neuer Mitarbeiter (M365, Notebook)",
+      "partner_xmlid": "partner_customer_prod",
+      "stage_xmlid": "helpdesk.stage_new",
+      "priority": "1",
+      "description": "Neuer Mitarbeiter zum 01.10.: Microsoft-365-Konto, E-Mail, Notebook und Zugänge einrichten."
+    },
+    {
+      "xml_id": "ticket_backup_restore",
+      "name": "Cloud-Backup: Wiederherstellung angefragt",
+      "partner_xmlid": "partner_customer_hotel",
+      "stage_xmlid": "helpdesk.stage_solved",
+      "priority": "2",
+      "description": "Versehentlich gelöschte Buchhaltungsdatei aus dem Cloud-Backup wiederhergestellt und an den Kunden übergeben."
+    }
+  ],
+  "quotation": {
+    "xml_id": "quotation_hotel_wlan",
+    "partner_xmlid": "partner_customer_hotel",
+    "state": "draft",
+    "lines": [
+      {"product_xmlid": "product_switch", "qty": 6.0, "description": "Managed Switch 24 Port Gigabit"},
+      {"product_xmlid": "product_accesspoint", "qty": 10.0, "description": "WLAN Access Point Wi-Fi 6 (Deckenmontage)"},
+      {"product_xmlid": "product_svc_network", "qty": 1.0, "description": "Netzwerkprojekt WLAN-Erneuerung (Pauschale)"}
+    ]
+  },
+  "example_orders": [
+    {
+      "xml_id": "sale_order_bau_1",
+      "partner_xmlid": "partner_customer_bau",
+      "state": "sent",
+      "date_order": "2026-09-09",
+      "lines": [
+        {"product_xmlid": "product_notebook", "qty": 5.0, "description": "Business-Notebook 14 Zoll (Core i5, 16 GB, 512 GB SSD)"},
+        {"product_xmlid": "product_docking", "qty": 5.0, "description": "Dockingstation USB-C Pro (DisplayPort, LAN, 90 W)"},
+        {"product_xmlid": "product_svc_erp", "qty": 16.0, "description": "ERP-Beratung (Stundensatz)"}
+      ]
+    },
+    {
+      "xml_id": "sale_order_prod_1",
+      "partner_xmlid": "partner_customer_prod",
+      "state": "sent",
+      "date_order": "2026-09-11",
+      "lines": [
+        {"product_xmlid": "product_server", "qty": 2.0, "description": "Rackserver 1U (Xeon Silver, 32 GB ECC, 2x 960 GB SSD)"},
+        {"product_xmlid": "product_nas", "qty": 1.0, "description": "NAS-System 8 TB (RAID 5, 4 Bays)"},
+        {"product_xmlid": "product_svc_managed", "qty": 1.0, "description": "Managed IT-Service (Monatspauschale)"}
+      ]
+    }
+  ],
+  "quotation_templates": [
+    {
+      "xml_id": "quote_template_workplace",
+      "name": "Arbeitsplatz-Paket (Notebook, Docking, Monitor)",
+      "number_of_days": 30,
+      "note": "Alle Preise zzgl. gesetzlicher MwSt. Lieferzeit 5-10 Werktage. Inklusive Lieferung, Aufbau und Inbetriebnahme am Arbeitsplatz.",
+      "lines": [
+        {"product_xmlid": "product_notebook", "qty": 1.0, "description": "Business-Notebook 14 Zoll (Core i5, 16 GB, 512 GB SSD)"},
+        {"product_xmlid": "product_docking", "qty": 1.0, "description": "Dockingstation USB-C Pro (DisplayPort, LAN, 90 W)"},
+        {"product_xmlid": "product_monitor", "qty": 1.0, "description": "Monitor 27 Zoll QHD IPS (höhenverstellbar)"}
+      ]
+    },
+    {
+      "xml_id": "quote_template_network",
+      "name": "Netzwerk- und WLAN-Paket",
+      "number_of_days": 45,
+      "note": "Festpreis inklusive Planung, Installation und Inbetriebnahme. Hardware gemäß Stückliste, Zieltermin nach gemeinsamer Abstimmung.",
+      "lines": [
+        {"product_xmlid": "product_switch", "qty": 2.0, "description": "Managed Switch 24 Port Gigabit"},
+        {"product_xmlid": "product_accesspoint", "qty": 4.0, "description": "WLAN Access Point Wi-Fi 6 (Deckenmontage)"},
+        {"product_xmlid": "product_firewall", "qty": 1.0, "description": "Firewall-Appliance Enterprise (1 Jahr Lizenz)"},
+        {"product_xmlid": "product_svc_network", "qty": 1.0, "description": "Netzwerkprojekt (Pauschale)"}
+      ]
+    },
+    {
+      "xml_id": "quote_template_managed",
+      "name": "Managed-IT-Service-Paket",
+      "number_of_days": 30,
+      "note": "Monatlich kündbar zum Monatsende. Enthält Service-Desk-Zeiten Mo-Fr 8-18 Uhr sowie monatliches Reporting.",
+      "lines": [
+        {"product_xmlid": "product_svc_managed", "qty": 1.0, "description": "Managed IT-Service (Monatspauschale)"},
+        {"product_xmlid": "product_svc_cloud", "qty": 1.0, "description": "Cloud-Backup (Monatspauschale)"}
+      ]
+    }
+  ],
+  "project_task_stages": [
+    {"xml_id": "task_stage_new", "name": "Neu", "sequence": 1},
+    {"xml_id": "task_stage_progress", "name": "In Bearbeitung", "sequence": 10},
+    {"xml_id": "task_stage_wait", "name": "Wartet auf Kunde", "sequence": 20},
+    {"xml_id": "task_stage_done", "name": "Erledigt", "sequence": 30, "fold": true}
+  ],
+  "projects": [
+    {
+      "xml_id": "project_netz_bau",
+      "name": "Netzwerk-Infrastruktur Baumeister Huber",
+      "partner_xmlid": "partner_customer_bau",
+      "stage_xmlid": "project.project_project_stage_1",
+      "date_start": "2026-09-01",
+      "date_end": "2026-11-30",
+      "privacy_visibility": "portal",
+      "description": "Erneuerung der Netzwerk- und WLAN-Infrastruktur am Standort München: Bestandsaufnahme, Konzept, Installation und Inbetriebnahme."
+    },
+    {
+      "xml_id": "project_erp_prod",
+      "name": "ERP-Einführung Müller Präzisionsteile",
+      "partner_xmlid": "partner_customer_prod",
+      "stage_xmlid": "project.project_project_stage_1",
+      "date_start": "2026-08-15",
+      "date_end": "2027-03-31",
+      "privacy_visibility": "portal",
+      "description": "Einführung eines integrierten ERP inklusive Materialwirtschaft, Zeiterfassung und Anbindung an zwei Produktionsstandorte."
+    }
+  ],
+  "project_tasks": [
+    {"xml_id": "task_bau_survey", "name": "Vor-Ort-Begehung und Bestandsaufnahme", "project_xmlid": "project_netz_bau", "stage_xmlid": "task_stage_progress", "priority": "1", "allocated_hours": 8.0, "date_deadline": "2026-09-12 17:00:00"},
+    {"xml_id": "task_bau_concept", "name": "Netzwerk-Konzept und Stückliste", "project_xmlid": "project_netz_bau", "stage_xmlid": "task_stage_new", "priority": "2", "allocated_hours": 16.0, "date_deadline": "2026-09-26 17:00:00"},
+    {"xml_id": "task_bau_install", "name": "Installation Switches und Access Points", "project_xmlid": "project_netz_bau", "stage_xmlid": "task_stage_wait", "priority": "1", "allocated_hours": 24.0},
+    {"xml_id": "task_prod_workshop", "name": "Anforderungs-Workshops Fachbereiche", "project_xmlid": "project_erp_prod", "stage_xmlid": "task_stage_done", "priority": "2", "allocated_hours": 40.0},
+    {"xml_id": "task_prod_config", "name": "Konfiguration ERP-Module", "project_xmlid": "project_erp_prod", "stage_xmlid": "task_stage_progress", "priority": "2", "allocated_hours": 60.0, "date_deadline": "2026-10-31 17:00:00"},
+    {"xml_id": "task_prod_training", "name": "Key-User-Schulung", "project_xmlid": "project_erp_prod", "stage_xmlid": "task_stage_new", "priority": "1", "allocated_hours": 16.0}
+  ]
+}

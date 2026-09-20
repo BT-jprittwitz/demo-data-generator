@@ -73,6 +73,7 @@ engine/
   manifest.py      __manifest__.py / hooks.py (company visibility, invoice posting)
   builder.py       module directory + ZIP
   validate.py      static check of the known landmines (no Odoo needed)
+  verify.py        spec-aware Postgres assertions for the install smoke test
   cli.py           CLI (generate / validate)
 examples/          example specifications
 engine/tests/      engine tests:  python3 -m unittest discover -s engine/tests -t .

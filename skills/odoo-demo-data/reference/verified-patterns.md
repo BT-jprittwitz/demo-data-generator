@@ -322,3 +322,126 @@ Verified against `odoo/odoo@19.0`, `odoo/addons/base/models/res_users.py`:
 
 Login/password default: `demo`/`demo` (`engine/manifest.py` `DEMO_USER_LOGIN`/
 `DEMO_USER_PASSWORD`).
+
+## 4.19 Partner `vat` is checksum-validated once `base_vat` is installed (real)
+
+Source: `odoo/odoo@19.0`, `addons/base_vat/models/res_partner.py` +
+`addons/account/models/partner.py`.
+
+- `res.partner.vat` is `fields.Char(inverse="_inverse_vat", store=True)`
+  (`base_vat/models/res_partner.py:104`); the inverse calls `_check_vat()`
+  (`account/models/partner.py:849-854`) -> `_run_vat_checks(..., validation='error')`
+  (`base_vat/models/res_partner.py:106-164`). An invalid number raises
+  `ValidationError('The VAT number [..] does not seem to be valid..')` and aborts
+  the XML load (`_load_records_create` calls the real ORM `create()`).
+- Which checker runs comes from `_check_vat_number` (`:346-350`):
+  `check_vat_<cc>` if defined, else `stdnum.util.get_cc_module(cc, 'vat')`.
+  Germany overrides it (`:898-901`): `stdnum.de.vat.is_valid(vat) or
+  stdnum.de.stnr.is_valid(vat)`. So `DE` numbers must satisfy the ISO 7064
+  Mod 11,10 checksum (`stdnum/iso7064/mod_11_10.py`); a syntactically plausible
+  but checksum-invalid number (e.g. `DE118273456`) fails.
+- `base_vat` is only present when a localization pulls it in. `l10n_de`
+  depends on `base_vat` (`l10n_de/__manifest__.py:19-25`), `l10n_ch` does
+  **not** - which is why `bt_demo_nishcom`'s invented Swiss/German VAT numbers
+  install fine but the same invented numbers abort a `de_skr03`/`de_skr04`
+  package. The context key `no_vat_validation` switches the check off
+  (`:146`), but that would only silence, not fix, the demo data.
+- **Fix:** use checksum-valid VAT numbers. Compute the check digit, do not guess:
+  - DE: `stdnum.iso7064.mod_11_10.calc_check_digit('11827345')` -> `4` ->
+    `DE118273454`.
+  - AT: `stdnum.at.uid.calc_check_digit('U2233445')` -> `4` -> `ATU22334454`.
+  - CH (`CHE-142.028.625`) is unaffected here (no `base_vat`), but keep the
+    number plausible with the correct `CHE-xxx.xxx.xxx` format.
+- `engine/validate.py` implements the DE (Mod 11,10) and AT (Luhn) checksum and
+  flags invalid partner VAT numbers as errors **only** when the manifest
+  depends on `base_vat`/`l10n_de`; `engine/tests/test_engine.py
+  (VatValidationTests)` pins both checks against the stdnum reference values.
+
+## 4.20 Quotation templates `sale.order.template` ("Angebotsvorlagen")
+
+Source: `odoo/odoo@19.0`,
+`addons/sale_management/models/sale_order_template.py`,
+`sale_order_template_line.py`. Module: `sale_management` (already a hard
+dependency of every generated module, `engine/manifest.py`).
+
+- `_name = 'sale.order.template'`; **only `name` is required**
+  (`sale_order_template.py:18`). `company_id` is a plain m2o with default
+  `env.company` (`:16`) - set it explicitly to the demo company so the template
+  and its lines belong to it.
+- `note` = "Terms and conditions" (`fields.Html(translate=True)`, `:19`);
+  `number_of_days` = quotation validity (`:27`); `sequence` (`:20`).
+- `sale_order_template_line_ids` is a One2many to `sale.order.template.line`
+  (`:47-50`). The line has TWO SQL constraints
+  (`sale_order_template_line.py:12-19`):
+  - `_accountable_product_id_required`: `display_type IS NULL` requires
+    `product_id IS NOT NULL AND product_uom_id IS NOT NULL`;
+  - `_non_accountable_fields_null`: `display_type` set forbids
+    product/quantity/UoM.
+    So a product line MUST set both `product_id` and `product_uom_id`.
+- `product_uom_id` is compute+store+`readonly=False`+`precompute=True`
+  (`:45-50`, computed from `product_id.uom_id`). **Set it explicitly**
+  (`uom.product_uom_unit`) so the DB CHECK can never race the compute.
+  `product_uom_qty` is required (default 1, `:51-55`); `name` is the
+  (translatable) description (`:39-42`).
+- `_check_company_id` (`:86-124`) rejects products whose `company_id` is not
+  accessible to the template company. Since products are created for the demo
+  company, the template's `company_id` must be the demo company too.
+- `create()` runs `_update_product_translations()` (`:134-138`) - harmless for
+  our XML load (it only rewrites line names that match the product description).
+- **Engine:** `QuotationTemplate`/`QuotationTemplateLine` in `engine/model.py`,
+  renderer `records.quotation_template_record`, file
+  `data/sale_order_template_data.xml`; section `quotation_templates` lives in
+  the `sales` bundle. `require_signature`/`require_payment` are computed from
+  the company (`:31-45`) and are therefore not set.
+
+## 4.21 Projects `project.project` / `project.task` / task stages
+
+Source: `odoo/odoo@19.0`, `addons/project/models/project_project.py`,
+`project_task.py`, `project_task_type.py`, `project_project_stage.py`;
+`addons/project/data/project_data.xml`, `data/project_demo.xml`. Module:
+`project`.
+
+- **`project.project`** (`project_project.py`): only `name` is required
+  (`:91`). `company_id` is compute+store+`readonly=False` (`:95`,
+  `_compute_company_id :245-252`); `partner_id` must belong to the project's
+  company (`_inverse_company_id :260-279`). `privacy_visibility` is required,
+  default `'portal'` (`:119-...`). No alias is created unless `alias_name` is
+  set (`mail.alias.mixin.optional`). No analytic account is created
+  automatically (`_create_analytic_account` is not called on `create`).
+- **Project stages** (`project.project.stage`): the four core records
+  `project.project_project_stage_0..3` ("To Do"/"In Progress"/"Done"/
+  "Cancelled") ship as `noupdate="1"` data (`data/project_data.xml`) with
+  `company_id = False`, so they are usable by the demo company. `stage_id` has
+  default `_default_stage_id` (lowest sequence, `:68-70`) and is group-gated
+  (`groups="project.group_project_stages"`, `:158-159`).
+- **Task stages** (`project.task.type`): there are **NO default task stages** in
+  19.0 - they must be created. `name` required (`project_task_type.py`).
+  `project_ids` is the inverse of `project.project.type_ids` (same relation
+  `project_task_type_rel`).
+- **`project.task`** (`project_task.py`): only `name` required (`:152`).
+  `project_id` (`:193`), `stage_id` (`:161-163`) and `company_id` (`:235`) are
+  compute+store+`readonly=False`. `state` is compute+store+required with default
+  `'01_in_progress'` (`:174`) - **never set it**.
+- **Landmine - a task's stage must be linked to its project.**
+  `_compute_stage_id` (`:688-695`) resets the stage when
+  `project not in task.stage_id.project_ids`; `stage_find` (`:974-993`) only
+  searches `project.task.type` where `project_ids = project.id`. Pattern
+  (`data/project_demo.xml`): create the task stages without `project_ids`, then
+  link them through `project.project.type_ids` with
+  `Command.link(ref('stage'))`.
+- **Landmine - task stages vs. personal stages.** `project.task.type.user_id` is
+  compute+store with default `_default_user_id` = `env.uid` when no
+  `default_project_id` context is set. `_compute_user_id` (`project_task_type.py`)
+  clears `user_id` once `project_ids` is set, and
+  `_check_personal_stage_not_linked_to_projects` forbids `user_id` + `project_ids`
+  together. Creating the stage without `project_ids` (and linking from the
+  project side) lets the compute clear `user_id` - the canonical demo pattern.
+  Because of this, `engine/model.py` rejects `project_task_stages` without a
+  project (they would become personal stages of the installer).
+- **Engine:** `Project`/`ProjectTaskStage`/`ProjectTask` in `engine/model.py`,
+  renderers `records.project_*_record`, files
+  `data/project_task_stage_data.xml` -> `data/project_project_data.xml` ->
+  `data/project_task_data.xml` (order matters: stages before projects before
+  tasks), section/bundle `project` (app `project`, requires `contacts`).
+  `engine/validate.py` flags a `project.task` whose `stage_id` is not linked via
+  `project.type_ids`, and `project.task` without `project.project`.

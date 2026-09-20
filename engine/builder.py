@@ -29,6 +29,19 @@ def write_module_dir(spec: CustomerSpec, out_dir: Path) -> Path:
         (data_dir / "helpdesk_team_data.xml").write_text(records.render_helpdesk_team_xml(spec), encoding="utf-8")
     if spec.partners:
         (data_dir / "res_partner_data.xml").write_text(records.render_res_partner_xml(spec), encoding="utf-8")
+    # Task stages MUST exist before the projects that link them (type_ids).
+    if spec.project_task_stages:
+        (data_dir / "project_task_stage_data.xml").write_text(
+            records.render_project_task_stage_xml(spec), encoding="utf-8"
+        )
+    if spec.projects:
+        (data_dir / "project_project_data.xml").write_text(
+            records.render_project_xml(spec), encoding="utf-8"
+        )
+    if spec.project_tasks:
+        (data_dir / "project_task_data.xml").write_text(
+            records.render_project_task_xml(spec), encoding="utf-8"
+        )
     if spec.products:
         (data_dir / "product_data.xml").write_text(records.render_product_xml(spec), encoding="utf-8")
     if spec.boms:
@@ -48,6 +61,10 @@ def write_module_dir(spec: CustomerSpec, out_dir: Path) -> Path:
         (data_dir / "account_move_data.xml").write_text(records.render_account_move_xml(spec), encoding="utf-8")
     if spec.helpdesk_tickets:
         (data_dir / "helpdesk_ticket_data.xml").write_text(records.render_helpdesk_ticket_xml(spec), encoding="utf-8")
+    if spec.quotation_templates:
+        (data_dir / "sale_order_template_data.xml").write_text(
+            records.render_quotation_template_xml(spec), encoding="utf-8"
+        )
     if spec.quotation:
         (data_dir / "sale_order_quotation_data.xml").write_text(
             records.render_sale_order_quotation_xml(spec), encoding="utf-8"

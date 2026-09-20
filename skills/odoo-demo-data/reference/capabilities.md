@@ -39,8 +39,9 @@ the bundle) - do not fake data for it.
 | `company` | `company` | - | - | always - every module creates its own res.company. |
 | `contacts` | `partners` | - | - | named customers, suppliers or people appear anywhere (sales, purchasing, CRM, support). |
 | `products` | `products` | - | - | the company sells or buys goods or services. |
-| `sales` | `quotation`, `example_orders` | `sale_management` | `products`, `contacts` | quotes and sales orders to customers. |
+| `sales` | `quotation`, `quotation_templates`, `example_orders` | `sale_management` | `products`, `contacts` | quotes, sales orders and reusable quotation templates to customers. |
 | `crm` | `crm_leads` | `crm` | `contacts` | a lead/opportunity pipeline before or alongside quoting. |
+| `project` | `projects`, `project_task_stages`, `project_tasks` | `project` | `contacts` | delivery/implementation work is tracked as projects with tasks and stages (services, construction, IT rollout, ...). |
 | `purchase` | `purchase_orders` | `purchase` | `products`, `contacts`, `stock` | procurement of goods/services from suppliers. |
 | `stock` | `stock_quants` | `stock` | `products` | the company holds, stores or ships inventory. |
 | `mrp` | `boms`, `manufacturing_orders` | `mrp` | `stock`, `products` | the company manufactures goods from components (bills of materials); implies a warehouse. |

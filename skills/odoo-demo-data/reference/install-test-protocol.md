@@ -19,6 +19,14 @@ installation. Install against a real kernel before every delivery.
 `Module <name> loaded` marker), full log on failure, DB dropped on success. Success
 = exit 0; failure = exit 1 with the complete log; preflight problem = exit 2.
 
+Because a log without `Traceback` is not proof (a `post_init_hook` can swallow an
+error and Odoo still prints `Module <name> loaded`), the harness then runs
+**spec-aware Postgres data assertions**: the matching spec is auto-detected in
+`examples/` (or given via `--spec`), and `engine/verify.py` derives record counts
+from `ir_model_data` plus semantic checks (invoices `state='posted'`,
+`standard_price` stored under the demo company key, tasks have a stage). A failed
+assertion is exit 1 with the DB kept for inspection.
+
 It targets the local Enterprise instance `../odoodemo-local` (compose service
 `web`) by default:
 
@@ -28,9 +36,10 @@ python3 engine/docker/test_install.py --module <technical_name>
 ```
 
 Useful flags: `--log <path>` (write the full log), `--keep-db` (keep the DB even
-on success), `--verbose` (always print the log), `--timeout <s>`, and
-`--compose-dir` / `--service` for a different instance. If `--module` is omitted
-and exactly one `.zip` is in `./output`, that module is used.
+on success), `--verbose` (always print the log), `--timeout <s>`,
+`--compose-dir` / `--service` for a different instance, `--spec <path>` (assert
+against this spec) and `--no-verify` (skip the data assertions). If `--module` is
+omitted and exactly one `.zip` is in `./output`, that module is used.
 
 ## Enterprise (the only supporting setup)
 

@@ -21,11 +21,16 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 DEFAULT_TIMEOUT = 1800  # seconds; first install with many dependencies can be slow
 
@@ -77,6 +82,73 @@ def _run(cmd: list[str], cwd: Path, timeout: int) -> subprocess.CompletedProcess
     return subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, timeout=timeout)
 
 
+def _detect_spec(module: str) -> Path | None:
+    """Find the example spec whose technical_name matches the module."""
+    from engine.spec_loader import load_spec
+
+    for path in sorted((REPO_ROOT / "examples").glob("*.json")):
+        try:
+            spec = load_spec(json.loads(path.read_text(encoding="utf-8")))
+        except Exception:  # noqa: BLE001 - non-matching/invalid specs are skipped
+            continue
+        if spec.module.technical_name == module:
+            return path
+    return None
+
+
+def _load_spec(path: Path):
+    from engine.spec_loader import load_spec
+
+    return load_spec(json.loads(Path(path).read_text(encoding="utf-8")))
+
+
+def _psql_scalar(compose_dir: Path, db_service: str, db: str, sql: str) -> str:
+    cmd = [
+        "docker", "compose", "exec", "-T", db_service,
+        "psql", "-U", "odoo", "-d", db, "-tAc", sql,
+    ]
+    result = _run(cmd, compose_dir, 120)
+    if result.returncode != 0:
+        raise RuntimeError((result.stdout + result.stderr).strip() or f"psql exit {result.returncode}")
+    return result.stdout.strip()
+
+
+def _verify_data(compose_dir: Path, db_service: str, db: str, spec):
+    """Run the spec-derived Postgres assertions. Returns (ok, report, failures)."""
+    from engine.verify import company_id_query, data_checks, standard_price_check
+
+    failures: list[str] = []
+    lines: list[str] = []
+    try:
+        cid_raw = _psql_scalar(compose_dir, db_service, db, company_id_query(spec))
+    except (OSError, subprocess.TimeoutExpired, RuntimeError) as exc:
+        return False, f"could not resolve the demo company id: {exc}", ["company id query failed"]
+    if not cid_raw.isdigit():
+        return False, f"demo company not found (query returned {cid_raw!r})", ["demo company missing"]
+
+    checks = data_checks(spec)
+    extra = standard_price_check(spec, int(cid_raw))
+    if extra is not None:
+        checks.append(extra)
+
+    lines.append("Postgres data assertions:")
+    for check in checks:
+        try:
+            value = _psql_scalar(compose_dir, db_service, db, check.sql)
+        except (OSError, subprocess.TimeoutExpired, RuntimeError) as exc:
+            failures.append(f"{check.label}: query failed ({exc})")
+            lines.append(f"  ERROR {check.label}: query failed ({exc})")
+            continue
+        ok = str(value) == str(check.expected)
+        mark = "ok  " if ok else "FAIL"
+        lines.append(f"  {mark} {check.label}: expected {check.expected}, got {value}")
+        if not ok:
+            detail = f" ({check.hint})" if check.hint else ""
+            failures.append(f"{check.label}: expected {check.expected}, got {value}{detail}")
+
+    return (not failures), "\n".join(lines), failures
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -94,6 +166,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--log", help="write the full log to this path")
     parser.add_argument("--keep-db", action="store_true", help="never drop the test database")
     parser.add_argument("--verbose", action="store_true", help="always print the full log")
+    parser.add_argument("--spec", help="customer spec JSON for the Postgres data assertions "
+                                      "(default: auto-detect in examples/ by module name)")
+    parser.add_argument("--no-verify", action="store_true",
+                        help="skip the Postgres data assertions")
     args = parser.parse_args(argv)
 
     compose_dir = Path(args.compose_dir).resolve()
@@ -151,19 +227,52 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\nOK: module {module!r} installed without Traceback/CRITICAL.")
         if args.verbose:
             print(log)
+
+        # --- Postgres data assertions (log alone is not proof) ----------------
+        if not args.no_verify:
+            spec_path = Path(args.spec) if args.spec else _detect_spec(module)
+            if spec_path is None:
+                print("note: no matching spec in examples/ - skipping Postgres data "
+                      "assertions (pass --spec <path> to enable).")
+            else:
+                try:
+                    spec = _load_spec(spec_path)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"warning: could not load spec {spec_path}: {exc}", file=sys.stderr)
+                else:
+                    print(f"verifying data against spec {spec_path} ...")
+                    verify_ok, report, failures = _verify_data(
+                        compose_dir, args.db_service, db_name, spec
+                    )
+                    print(report)
+                    if not verify_ok:
+                        print(f"\nFAILED: module {module!r} installed, but the data "
+                              f"assertions failed:", file=sys.stderr)
+                        for failure in failures:
+                            print(f"  - {failure}", file=sys.stderr)
+                        print(f"  database {db_name!r} kept for inspection", file=sys.stderr)
+                        return 1
+
         if args.keep_db:
             print(f"kept database {db_name!r}")
         else:
+            # WITH (FORCE) terminates lingering connections (the always-on web
+            # service can hold idle sessions to the test DB), otherwise
+            # DROP DATABASE fails and the DB silently stays behind.
             drop = [
                 "docker", "compose", "exec", "-T", args.db_service,
                 "psql", "-U", "odoo", "-d", "postgres", "-c",
-                f'DROP DATABASE IF EXISTS {db_name};',
+                f'DROP DATABASE IF EXISTS {db_name} WITH (FORCE);',
             ]
             try:
-                _run(drop, compose_dir, 120)
-                print(f"dropped database {db_name!r}")
+                result = _run(drop, compose_dir, 120)
+                if result.returncode == 0:
+                    print(f"dropped database {db_name!r}")
+                else:
+                    print(f"warning: could not drop database {db_name!r}: "
+                          f"{(result.stderr or result.stdout).strip()}", file=sys.stderr)
             except (OSError, subprocess.TimeoutExpired) as exc:
-                print(f"warning: could not drop database {db_name!r}: {exc}")
+                print(f"warning: could not drop database {db_name!r}: {exc}", file=sys.stderr)
         return 0
 
     # --- failure: return the complete log (hard rule) ------------------------

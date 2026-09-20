@@ -44,9 +44,10 @@ python3 -m engine.cli new --with mrp,sales --name "Muster AG" --country ch --out
 Copy `examples/muster_foerdertechnik.json` (manufacturing customer) or
 `examples/nishcom_ag.json` (multi-app/Enterprise) as a template. Covers the verified
 object types: `res.company` (incl. chart of accounts), `res.partner`,
-`product.product`, `mrp.bom`, `mrp.production`, `sale.order`, `crm.lead`,
-`purchase.order`, `stock.quant`/`stock.warehouse`, `account.move` and
-`helpdesk.ticket`.
+`product.product`, `mrp.bom`, `mrp.production`, `sale.order`,
+`sale.order.template` (quotation templates), `crm.lead`, `purchase.order`,
+`stock.quant`/`stock.warehouse`, `account.move`, `helpdesk.ticket`,
+`project.project`/`project.task` (incl. task stages).
 Complete format: `skills/odoo-demo-data/reference/spec-format.md`.
 Unknown fields are rejected on load (typo protection).
 
@@ -73,6 +74,7 @@ engine/
   manifest.py       __manifest__.py / hooks.py rendering
   builder.py        assemble module directory + ZIP
   validate.py       static check of a built module (no Odoo kernel needed)
+  verify.py         spec-aware Postgres assertions for the install smoke test
   cli.py            CLI (generate / validate / spec-schema)
   spec/spec.schema.json  generated JSON schema of the customer specification
   tests/           engine tests (no Odoo needed)

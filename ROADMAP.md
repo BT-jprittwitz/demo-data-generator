@@ -24,13 +24,18 @@ the module - minimal friction.
 - Generator engine (JSON spec -> installable Odoo 19.0 module ZIP).
 - Verified building blocks: company (incl. chart of accounts), partners, products,
   bills of materials, manufacturing orders (draft; implies the warehouse),
-  sales, CRM, purchasing, inventory, accounting (posted invoices), helpdesk.
-  Two reference specs (manufacturing, multi-app/Enterprise).
+  sales (incl. quotation templates `sale.order.template`), CRM, purchasing,
+  inventory, accounting (posted invoices), helpdesk, projects
+  (`project.project` + `project.task` + task stages).
+  Three reference specs (manufacturing, multi-app/Enterprise, German IT system
+  house `de_skr04`).
 - Static validation of the known landmines + tests; real
   installation procedure against Enterprise 19.0 documented.
 - `engine/docker/test_install.py`: automated installation smoke test against the
   local Enterprise instance (`../odoodemo-local`) - fresh DB per run, log analysis,
-  full log on failure.
+  full log on failure, plus spec-aware Postgres data assertions (record counts via
+  `ir_model_data`, invoice posting, `standard_price` company key) so a swallowed
+  `post_init_hook` error cannot pass as success.
 - Knowledge as a neutral skill (`skills/odoo-demo-data/`) instead of handover prose.
 - Auto-created demo login (`demo`/`demo`, name = company) with the same
   groups/companies as `base.user_admin` - no manual user setup after a demo
@@ -49,7 +54,8 @@ the module - minimal friction.
 - **Subscription/SaaS building blocks** (subscriptions, maintenance products) -
   conceptually named, not implemented; only built when a concrete customer needs
   them, and then as building blocks, not as a fixed vertical.
-- **More object types/apps** depending on customer demand (e.g. projects, manufacturing).
+- **More object types/apps** depending on customer demand (e.g. subscriptions,
+  quality, maintenance - only with a concrete customer, then verified + tested).
 
 ## Deliberately out of scope
 

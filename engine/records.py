@@ -20,7 +20,11 @@ from .model import (
     ManufacturingOrder,
     Partner,
     Product,
+    Project,
+    ProjectTask,
+    ProjectTaskStage,
     PurchaseOrder,
+    QuotationTemplate,
     SaleOrder,
     StockQuant,
 )
@@ -207,6 +211,108 @@ def sale_order_record(o: SaleOrder, company_xmlid: str, language: str) -> ET.Ele
     fields.append(field_el("state", text=o.state))
     fields.append(field_el("order_line", eval_=f"[{line_dicts}]"))
     return record_el("sale.order", o.xml_id, fields, context=_context(language))
+
+
+def quotation_template_record(t: QuotationTemplate, company_xmlid: str, language: str) -> ET.Element:
+    """``sale.order.template`` ("Angebotsvorlage", module sale_management).
+
+    Verified against sale_management/models/sale_order_template{,_line}.py: only
+    ``name`` is required; ``company_id`` is set explicitly so the template (and
+    its product lines, ``_check_company_id``) belong to the demo company. The
+    line's ``product_uom_id`` is set explicitly so the DB CHECK constraint
+    ``_accountable_product_id_required`` (product_id AND product_uom_id NOT NULL)
+    cannot race the compute (verified-patterns.md 4.20).
+    """
+    line_dicts = []
+    for line in t.lines:
+        parts = [
+            f"'product_id': ref('{line.product_xmlid}')",
+            f"'product_uom_qty': {line.qty}",
+            "'product_uom_id': ref('uom.product_uom_unit')",
+        ]
+        if line.description:
+            parts.append(f"'name': {line.description!r}")
+        line_dicts.append("(0, 0, {" + ", ".join(parts) + "})")
+    fields = [
+        field_el("name", text=t.name),
+        field_el("company_id", ref=company_xmlid),
+        field_el("sequence", text=t.sequence),
+    ]
+    if t.note:
+        fields.append(field_el("note", text=t.note))
+    if t.number_of_days is not None:
+        fields.append(field_el("number_of_days", text=t.number_of_days))
+    fields.append(
+        field_el("sale_order_template_line_ids", eval_=f"[{', '.join(line_dicts)}]")
+    )
+    return record_el("sale.order.template", t.xml_id, fields, context=_context(language, company_xmlid))
+
+
+def project_task_stage_record(stage: ProjectTaskStage, language: str) -> ET.Element:
+    """``project.task.type`` (task stage). No ``project_ids``/``user_id`` here:
+    the stage is linked to its project through ``project.type_ids`` in
+    ``project_record`` (the pattern of project/data/project_demo.xml), and
+    ``project.task.type._compute_user_id`` then clears the default ``user_id``
+    (verified-patterns.md 4.21)."""
+    fields = [
+        field_el("name", text=stage.name),
+        field_el("sequence", text=stage.sequence),
+        field_el("fold", text=stage.fold),
+    ]
+    return record_el("project.task.type", stage.xml_id, fields, context=_context(language))
+
+
+def project_record(
+    p: Project, company_xmlid: str, task_stage_xmlids: list[str], language: str
+) -> ET.Element:
+    """``project.project``. ``type_ids`` links the task stages to the project
+    (the inverse ``project_ids`` is what ``project.task.stage_find`` searches);
+    every defined task stage is linked so any task can reference any stage
+    (verified-patterns.md 4.21). ``state``-like required fields have defaults."""
+    fields = [
+        field_el("name", text=p.name),
+        field_el("company_id", ref=company_xmlid),
+    ]
+    if p.stage_xmlid:
+        fields.append(field_el("stage_id", ref=p.stage_xmlid))
+    if p.partner_xmlid:
+        fields.append(field_el("partner_id", ref=p.partner_xmlid))
+    if p.description:
+        fields.append(field_el("description", text=p.description))
+    if p.date_start:
+        fields.append(field_el("date_start", text=p.date_start))
+    if p.date_end:
+        fields.append(field_el("date", text=p.date_end))
+    if p.privacy_visibility:
+        fields.append(field_el("privacy_visibility", text=p.privacy_visibility))
+    link = ", ".join(f"Command.link(ref('{s}'))" for s in task_stage_xmlids)
+    fields.append(field_el("type_ids", eval_=f"[{link}]"))
+    return record_el("project.project", p.xml_id, fields, context=_context(language, company_xmlid))
+
+
+def project_task_record(t: ProjectTask, company_xmlid: str, language: str) -> ET.Element:
+    """``project.task``. ``state`` is compute+store+required and must NOT be set;
+    ``stage_id`` is compute+store+readonly=False and must be a stage linked to
+    the task's project, otherwise ``_compute_stage_id`` resets it
+    (verified-patterns.md 4.21)."""
+    fields = [
+        field_el("name", text=t.name),
+        field_el("project_id", ref=t.project_xmlid),
+        field_el("company_id", ref=company_xmlid),
+    ]
+    if t.stage_xmlid:
+        fields.append(field_el("stage_id", ref=t.stage_xmlid))
+    if t.partner_xmlid:
+        fields.append(field_el("partner_id", ref=t.partner_xmlid))
+    if t.description:
+        fields.append(field_el("description", text=t.description))
+    if t.priority is not None:
+        fields.append(field_el("priority", text=t.priority))
+    if t.date_deadline:
+        fields.append(field_el("date_deadline", text=t.date_deadline))
+    if t.allocated_hours is not None:
+        fields.append(field_el("allocated_hours", text=t.allocated_hours))
+    return record_el("project.task", t.xml_id, fields, context=_context(language, company_xmlid))
 
 
 # ---------------------------------------------------------------------------
@@ -446,6 +552,39 @@ def render_sale_order_quotation_xml(spec: CustomerSpec) -> str:
 def render_sale_order_examples_xml(spec: CustomerSpec) -> str:
     return render_odoo_file(
         [sale_order_record(o, spec.company.xml_id, spec.resolved_language) for o in spec.example_orders],
+        noupdate=True,
+    )
+
+
+def render_quotation_template_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [
+            quotation_template_record(t, spec.company.xml_id, spec.resolved_language)
+            for t in spec.quotation_templates
+        ]
+    )
+
+
+def render_project_task_stage_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [project_task_stage_record(s, spec.resolved_language) for s in spec.project_task_stages]
+    )
+
+
+def render_project_xml(spec: CustomerSpec) -> str:
+    task_stage_xmlids = [s.xml_id for s in spec.project_task_stages]
+    return render_odoo_file(
+        [
+            project_record(p, spec.company.xml_id, task_stage_xmlids, spec.resolved_language)
+            for p in spec.projects
+        ],
+        noupdate=True,
+    )
+
+
+def render_project_task_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [project_task_record(t, spec.company.xml_id, spec.resolved_language) for t in spec.project_tasks],
         noupdate=True,
     )
 
