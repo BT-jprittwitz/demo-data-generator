@@ -595,7 +595,7 @@ class VatValidationTests(unittest.TestCase):
             self.assertTrue(any("4.19" in f.message for f in findings))
 
     def test_invalid_german_vat_is_not_flagged_without_base_vat(self):
-        # l10n_ch does not pull base_vat, so nishcom's VAT is not validated.
+        # l10n_ch does not pull base_vat, so musterhandel's VAT is not validated.
         with TemporaryDirectory() as tmp:
             module_dir = self._write_partner_module(tmp, ["account", "l10n_ch"], "DE118273456")
             findings = validate_module(module_dir)
@@ -708,9 +708,9 @@ class AdjacentProcessTests(unittest.TestCase):
                 ]),
             ])
 
-    def test_enertec_example_parses_new_sections(self):
+    def test_Musterkraft_example_parses_new_sections(self):
         spec = load_spec(json.loads(
-            (REPO_ROOT / "examples" / "enertec_kraftwerke.json").read_text(encoding="utf-8")
+            (REPO_ROOT / "examples" / "muster_kraftwerke.json").read_text(encoding="utf-8")
         ))
         self.assertTrue(spec.needs_maintenance)
         self.assertTrue(spec.needs_quality)

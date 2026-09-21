@@ -1,18 +1,18 @@
 {
   "module": {
-    "technical_name": "bt_demo_enertec",
-    "title": "Demo Data - enertec Kraftwerke GmbH (Manufacturing, Sales, Purchase, Inventory, Accounting, CRM, Projects, Helpdesk)",
+    "technical_name": "bt_demo_musterkraftwerke",
+    "title": "Demo Data - Musterkraftwerke GmbH (Manufacturing, Sales, Purchase, Inventory, Accounting, CRM, Projects, Helpdesk)",
     "category": "Manufacturing",
     "summary": "ERP demo for a German manufacturer of made-to-measure combined heat and power plants (CHP/BHKW): own company with the German chart of accounts (SKR04), component and finished-goods catalog, bills of materials, draft manufacturing orders, procurement, stock, a CRM pipeline, project delivery, posted customer/vendor invoices and after-sales service tickets.",
-    "description": "Sample demo-data module for enertec Kraftwerke GmbH (Muehlhausen, Thuringia, Germany), a manufacturer of combined heat and power plants (Blockheizkraftwerke, BHKW) from 20 to 530 kW el., made to measure for agriculture, municipalities and industry. It creates 1 new company including the German chart of accounts (l10n_de, SKR04), 8 contacts (component suppliers and business customers), 13 products (gas engines, generators, heat exchangers, control cabinets, frames and acoustic enclosures as components; three finished CHP units; commissioning, maintenance and remote-monitoring services), 3 bills of materials, 3 draft manufacturing orders, 4 CRM opportunities, 3 purchase orders, stock for 8 products, 3 posted invoices/bills (posted in the post_init_hook), 4 helpdesk tickets, 3 quotation templates, 1 quotation, 2 example sales orders and 2 delivery projects with tasks."
+    "description": "Sample demo-data module for Musterkraftwerke GmbH (Musterstadt, Thuringia, Germany), a manufacturer of combined heat and power plants (Blockheizkraftwerke, BHKW) from 20 to 530 kW el., made to measure for agriculture, municipalities and industry. It creates 1 new company including the German chart of accounts (l10n_de, SKR04), 8 contacts (component suppliers and business customers), 13 products (gas engines, generators, heat exchangers, control cabinets, frames and acoustic enclosures as components; three finished CHP units; commissioning, maintenance and remote-monitoring services), 3 bills of materials, 3 draft manufacturing orders, 4 CRM opportunities, 3 purchase orders, stock for 8 products, 3 posted invoices/bills (posted in the post_init_hook), 4 helpdesk tickets, 3 quotation templates, 1 quotation, 2 example sales orders and 2 delivery projects with tasks."
   },
   "accounting_app": "full",
   "company": {
     "xml_id": "demo_company",
-    "name": "enertec Kraftwerke GmbH",
-    "street": "Treffurter Weg 11",
-    "city": "Mühlhausen",
-    "zip": "99974",
+    "name": "Musterkraftwerke GmbH",
+    "street": "Musterweg 11",
+    "city": "Musterstadt",
+    "zip": "99999",
     "country_xmlid": "base.de",
     "vat": "DE306014067",
     "currency_xmlid": "base.EUR",
@@ -65,12 +65,12 @@
     },
     {
       "xml_id": "partner_customer_agrar",
-      "name": "Agrar-Energie Mühlhausen eG",
+      "name": "Agrar-Energie Musterstadt eG",
       "country_xmlid": "base.de",
       "vat": "DE142907689",
       "street": "Feldstraße 5",
-      "city": "Mühlhausen",
-      "zip": "99974",
+      "city": "Musterstadt",
+      "zip": "99999",
       "supplier_rank": 0,
       "customer_rank": 1
     },
@@ -150,7 +150,7 @@
     },
     {
       "xml_id": "product_comp_control",
-      "name": "Steuerungsschrank enertec Control 4.0",
+      "name": "Steuerungsschrank Musterkraft Control 4.0",
       "type": "consu",
       "sale_ok": false,
       "purchase_ok": true,
@@ -189,7 +189,7 @@
     },
     {
       "xml_id": "product_fin_eco50",
-      "name": "BHKW enertec ECO 50 (50 kW el. / 90 kW th.)",
+      "name": "BHKW Musterkraft ECO 50 (50 kW el. / 90 kW th.)",
       "type": "consu",
       "sale_ok": true,
       "purchase_ok": false,
@@ -202,7 +202,7 @@
     },
     {
       "xml_id": "product_fin_eco150",
-      "name": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)",
+      "name": "BHKW Musterkraft ECO 150 (150 kW el. / 220 kW th.)",
       "type": "consu",
       "sale_ok": true,
       "purchase_ok": false,
@@ -215,7 +215,7 @@
     },
     {
       "xml_id": "product_fin_max250",
-      "name": "BHKW enertec MAX 250 (250 kW el. / 360 kW th.)",
+      "name": "BHKW Musterkraft MAX 250 (250 kW el. / 360 kW th.)",
       "type": "consu",
       "sale_ok": true,
       "purchase_ok": false,
@@ -417,7 +417,7 @@
       "invoice_date": "2026-09-06",
       "ref": "RE-2026-2041",
       "lines": [
-        {"product_xmlid": "product_fin_eco150", "qty": 1.0, "price_unit": 189000.0, "description": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)"},
+        {"product_xmlid": "product_fin_eco150", "qty": 1.0, "price_unit": 189000.0, "description": "BHKW Musterkraft ECO 150 (150 kW el. / 220 kW th.)"},
         {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "price_unit": 4800.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"},
         {"product_xmlid": "product_svc_maintenance", "qty": 12.0, "price_unit": 950.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"}
       ]
@@ -429,7 +429,7 @@
       "invoice_date": "2026-09-10",
       "ref": "RE-2026-2042",
       "lines": [
-        {"product_xmlid": "product_fin_eco50", "qty": 1.0, "price_unit": 89500.0, "description": "BHKW enertec ECO 50 (50 kW el. / 90 kW th.)"},
+        {"product_xmlid": "product_fin_eco50", "qty": 1.0, "price_unit": 89500.0, "description": "BHKW Musterkraft ECO 50 (50 kW el. / 90 kW th.)"},
         {"product_xmlid": "product_svc_monitoring", "qty": 12.0, "price_unit": 190.0, "description": "Fernüberwachung und Monitoring (Monatspauschale)"}
       ]
     },
@@ -483,7 +483,7 @@
     "partner_xmlid": "partner_customer_lebensmittel",
     "state": "draft",
     "lines": [
-      {"product_xmlid": "product_fin_eco150", "qty": 1.0, "description": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)"},
+      {"product_xmlid": "product_fin_eco150", "qty": 1.0, "description": "BHKW Musterkraft ECO 150 (150 kW el. / 220 kW th.)"},
       {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"},
       {"product_xmlid": "product_svc_maintenance", "qty": 12.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"}
     ]
@@ -495,7 +495,7 @@
       "state": "sent",
       "date_order": "2026-08-05",
       "lines": [
-        {"product_xmlid": "product_fin_eco50", "qty": 1.0, "description": "BHKW enertec ECO 50 (50 kW el. / 90 kW th.)"},
+        {"product_xmlid": "product_fin_eco50", "qty": 1.0, "description": "BHKW Musterkraft ECO 50 (50 kW el. / 90 kW th.)"},
         {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"}
       ]
     },
@@ -505,7 +505,7 @@
       "state": "sent",
       "date_order": "2026-08-11",
       "lines": [
-        {"product_xmlid": "product_fin_eco150", "qty": 1.0, "description": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)"},
+        {"product_xmlid": "product_fin_eco150", "qty": 1.0, "description": "BHKW Musterkraft ECO 150 (150 kW el. / 220 kW th.)"},
         {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"}
       ]
     }
@@ -517,7 +517,7 @@
       "number_of_days": 45,
       "note": "Schlüsselfertige Lieferung inklusive Planung, Montage und Inbetriebnahme. Alle Preise zzgl. gesetzlicher MwSt. Lieferzeit nach Auftragsbestätigung ca. 6 Monate.",
       "lines": [
-        {"product_xmlid": "product_fin_eco50", "qty": 1.0, "description": "BHKW enertec ECO 50 (50 kW el. / 90 kW th.)"},
+        {"product_xmlid": "product_fin_eco50", "qty": 1.0, "description": "BHKW Musterkraft ECO 50 (50 kW el. / 90 kW th.)"},
         {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"},
         {"product_xmlid": "product_svc_maintenance", "qty": 12.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"}
       ]
@@ -528,7 +528,7 @@
       "number_of_days": 60,
       "note": "Schlüsselfertige Lieferung inklusive Planung, Montage, Inbetriebnahme und Anbindung an das vorhandene Wärmenetz. Alle Preise zzgl. gesetzlicher MwSt.",
       "lines": [
-        {"product_xmlid": "product_fin_eco150", "qty": 1.0, "description": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)"},
+        {"product_xmlid": "product_fin_eco150", "qty": 1.0, "description": "BHKW Musterkraft ECO 150 (150 kW el. / 220 kW th.)"},
         {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"},
         {"product_xmlid": "product_svc_maintenance", "qty": 12.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"}
       ]
@@ -564,7 +564,7 @@
     },
     {
       "xml_id": "project_agrar_eco50",
-      "name": "BHKW-Projekt Agrar-Energie Mühlhausen (ECO 50)",
+      "name": "BHKW-Projekt Agrar-Energie Musterstadt (ECO 50)",
       "partner_xmlid": "partner_customer_agrar",
       "stage_xmlid": "project.project_project_stage_1",
       "date_start": "2026-08-05",
@@ -612,7 +612,7 @@
     },
     {
       "xml_id": "equip_bhkw_agrar",
-      "name": "BHKW ECO 50 – Agrar-Energie Mühlhausen",
+      "name": "BHKW ECO 50 – Agrar-Energie Musterstadt",
       "category_xmlid": "maint_cat_bhkw",
       "partner_xmlid": "partner_customer_agrar",
       "serial_no": "ET-ECO50-2026-0042",
@@ -636,7 +636,7 @@
     },
     {
       "xml_id": "equip_waermetauscher_werk",
-      "name": "Abgaswärmetauscher Prüfstand (Werk Mühlhausen)",
+      "name": "Abgaswärmetauscher Prüfstand (Werk Musterstadt)",
       "category_xmlid": "maint_cat_peripherie",
       "serial_no": "ET-WT-PRUEF-01",
       "model": "WT 250",

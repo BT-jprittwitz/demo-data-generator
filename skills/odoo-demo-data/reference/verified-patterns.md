@@ -165,7 +165,7 @@ the POs. (2) Set `picking_type_id` explicitly:
 <function model="account.chart.template" name="try_loading">
     <value eval="[]"/>
     <value>ch</value>
-    <value model="res.company" eval="obj().env.ref('bt_demo_nishcom.demo_company')"/>
+    <value model="res.company" eval="obj().env.ref('bt_demo_musterhandel.demo_company')"/>
     <value name="install_demo" eval="False"/>
 </function>
 ```
@@ -342,7 +342,7 @@ Source: `odoo/odoo@19.0`, `addons/base_vat/models/res_partner.py` +
   but checksum-invalid number (e.g. `DE118273456`) fails.
 - `base_vat` is only present when a localization pulls it in. `l10n_de`
   depends on `base_vat` (`l10n_de/__manifest__.py:19-25`), `l10n_ch` does
-  **not** - which is why `bt_demo_nishcom`'s invented Swiss/German VAT numbers
+  **not** - which is why `bt_demo_musterhandel`'s invented Swiss/German VAT numbers
   install fine but the same invented numbers abort a `de_skr03`/`de_skr04`
   package. The context key `no_vat_validation` switches the check off
   (`:146`), but that would only silence, not fix, the demo data.

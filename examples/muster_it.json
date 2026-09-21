@@ -1,18 +1,18 @@
 {
   "module": {
-    "technical_name": "bt_demo_hold_spada",
-    "title": "Demo Data - HOLD & SPADA IT-Solutions GmbH (CRM, Sales, Purchase, Inventory, Accounting, Helpdesk)",
+    "technical_name": "bt_demo_muster_it",
+    "title": "Demo Data - Muster IT-Solutions GmbH (CRM, Sales, Purchase, Inventory, Accounting, Helpdesk)",
     "category": "Sales",
     "summary": "ERP demo for a German IT system house: own company with the German chart of accounts (SKR04), an IT hardware and service assortment, vendors, stock, a CRM pipeline, posted customer/vendor invoices and IT support tickets (helpdesk).",
-    "description": "Sample demo-data module for HOLD & SPADA IT-Solutions GmbH (Unterschleißheim near Munich, Germany), an IT system house serving crafts/construction, camping/hotel and industrial customers. It creates 1 new company including the German chart of accounts (l10n_de, SKR04), 7 contacts (IT distributors and business customers), 13 products (hardware such as notebooks, servers, switches and firewalls as well as services such as managed IT, ERP consulting and cloud backup), 4 CRM opportunities, 2 purchase orders, stock for 9 products, 3 posted invoices/bills (posted in the post_init_hook), 4 helpdesk tickets, 1 quotation and 2 example sales orders."
+    "description": "Sample demo-data module for Muster IT-Solutions GmbH (Musterstadt near Munich, Germany), an IT system house serving crafts/construction, camping/hotel and industrial customers. It creates 1 new company including the German chart of accounts (l10n_de, SKR04), 7 contacts (IT distributors and business customers), 13 products (hardware such as notebooks, servers, switches and firewalls as well as services such as managed IT, ERP consulting and cloud backup), 4 CRM opportunities, 2 purchase orders, stock for 9 products, 3 posted invoices/bills (posted in the post_init_hook), 4 helpdesk tickets, 1 quotation and 2 example sales orders."
   },
   "accounting_app": "full",
   "company": {
     "xml_id": "demo_company",
-    "name": "HOLD & SPADA IT-Solutions GmbH",
-    "street": "Freisinger Straße 9",
-    "city": "Unterschleißheim",
-    "zip": "85716",
+    "name": "Muster IT-Solutions GmbH",
+    "street": "Musterstraße 9",
+    "city": "Musterstadt",
+    "zip": "12345",
     "country_xmlid": "base.de",
     "currency_xmlid": "base.EUR",
     "chart_template": "de_skr04"

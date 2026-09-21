@@ -43,7 +43,7 @@ the module - minimal friction.
   `alert`), subscriptions (`sale.order` + `plan_id`) and field service
   (`project.is_fsm`).
   Reference specs: manufacturing, multi-app/Enterprise, German IT system house
-  `de_skr04`, German CHP manufacturer `enertec`.
+  `de_skr04`, German CHP manufacturer `Musterkraft`.
 - Static validation of the known landmines + tests; real
   installation procedure against Enterprise 19.0 documented.
 - `engine/docker/test_install.py`: automated installation smoke test against the
@@ -74,6 +74,8 @@ the module - minimal friction.
   about *more* users, not the single demo login.)
 - **More object types/apps** depending on customer demand - only with a concrete
   customer, then verified + tested (e.g. approvals, timesheets, e-commerce).
+  Concrete demand signals so far: the **`appointment`** app (booking of
+  treatment slots, from the Swiss podology practice `bt_demo_musterpodologie`).
 
 ## Deliberately out of scope
 

@@ -2,7 +2,7 @@
 
 ## Formalities
 
-- **Technical name** keep short, e.g. `bt_demo_mfg`, `bt_demo_nishcom`.
+- **Technical name** keep short, e.g. `bt_demo_mfg`, `bt_demo_musterhandel`.
 - **Author:** always `braintec`.
 - **License:** `LGPL-3`.
 - **Website:** `https://www.braintec.com`.
@@ -43,23 +43,23 @@ data where possible) and keys **all** demo data to it:
 4. Generator engine in this repo. `examples/muster_foerdertechnik.json`
    reproduces the same customer as (3), fixes the bug and adds
    master-data depth.
-5. `bt_demo_nishcom` (`examples/nishcom_ag.json`) — first multi-app/Enterprise case:
+5. `bt_demo_musterhandel` (`examples/muster_handel.json`) — first multi-app/Enterprise case:
    company + chart of accounts `ch`, product range, CRM, purchasing, inventory, posted
    customer/vendor invoices, helpdesk. Verified against Enterprise 19.0.
-6. `bt_demo_hold_spada` (`examples/hold_spada.json`) — German IT system house
-   (HOLD & SPADA IT-Solutions GmbH, Unterschreissheim): first `de_skr04` chart of
+6. `bt_demo_muster_it` (`examples/muster_it.json`) — German IT system house
+   (Muster IT-Solutions GmbH, Unterschreissheim): first `de_skr04` chart of
    accounts, hardware + IT-service catalog, CRM, purchasing, inventory, posted
    invoices/bills, helpdesk. Verified against Enterprise 19.0. New landmine
    found and documented: partner VAT checksum validation via `base_vat`
    (pulled in by `l10n_de`, verified-patterns.md 4.19).
-7. Same `bt_demo_hold_spada` extended with the new building blocks
+7. Same `bt_demo_muster_it` extended with the new building blocks
    **quotation templates** (`sale.order.template`, "Angebotsvorlagen") and
    **projects** (`project.project` + `project.task` + task stages). Verified
    against Enterprise 19.0 and by the spec-aware Postgres assertions of the
    smoke test (see `install-test-protocol.md`). New verified patterns 4.20/4.21.
-8. `bt_demo_enertec` (`examples/enertec_kraftwerke.json`) — German manufacturer
-   of made-to-measure combined heat and power plants (enertec Kraftwerke GmbH,
-   Muehlhausen/Thuringia): `de_skr04` chart of accounts, component + finished-goods
+8. `bt_demo_musterkraftwerke` (`examples/muster_kraftwerke.json`) — German manufacturer
+   of made-to-measure combined heat and power plants (Musterkraftwerke GmbH,
+   Musterstadt/Thuringia): `de_skr04` chart of accounts, component + finished-goods
    catalog, bills of materials and draft manufacturing orders, purchasing, stock,
    CRM pipeline, project delivery (planning -> fabrication -> installation ->
    commissioning), posted customer/vendor invoices and after-sales service
@@ -68,7 +68,7 @@ data where possible) and keys **all** demo data to it:
    assertions. Open demand signals at the time: `maintenance`, quality control
    (ISO 9001 / TÜV), recurring service revenue (`sale_subscription`) and field
    service.
-9. Same `bt_demo_enertec` extended with the four former demand signals as new
+9. Same `bt_demo_musterkraftwerke` extended with the four former demand signals as new
    building blocks (verified-patterns 4.22-4.26):
    **maintenance** (Community: equipment categories/equipment/requests, demo
    `maintenance.team`), **quality control** (Enterprise `quality_control`:
@@ -79,6 +79,18 @@ data where possible) and keys **all** demo data to it:
    `subscriptions_with_plan` and `products_recurring_invoice`). New landmine
    found and documented: a recurring product on a non-draft `sale.order` raises
    `_constraint_subscription_plan` (verified-patterns 4.25).
+
+10. `bt_demo_musterpodologie` (`examples/muster_podologie.json`) — Swiss podology
+    practice (medical foot care) and foot-care retailer Muster Podologie AG (Musterstadt
+    BL, shops in Basel and Zuerich): `ch` chart of accounts, service + product
+    catalog, CRM pipeline, purchasing, inventory, posted invoices/bills, patient
+    support tickets, maintenance of practice equipment and recurring foot-care
+    subscriptions. Bundles: `sales`, `crm`, `purchase`, `stock`, `accounting`,
+    `helpdesk`, `maintenance`, `subscriptions`. Deliberately **no** `quality`/
+    `mrp` (the company neither manufactures nor needs batch traceability; its
+    medical-device obligations surface as equipment maintenance). Open demand
+    signal: the `appointment` app (booking of treatment slots) has no bundle yet.
+    Verified against Enterprise 19.0 including the spec-aware Postgres assertions.
 
 ## Reference material
 

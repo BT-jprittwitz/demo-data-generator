@@ -48,7 +48,7 @@ knowledge lives in `reference/`.
    ```
    Then fill the sections with real content. Either example spec also works as a
    template: `examples/muster_foerdertechnik.json` (manufacturing) or
-   `examples/nishcom_ag.json` (multi-app/Enterprise). All fields:
+   `examples/muster_handel.json` (multi-app/Enterprise). All fields:
    `reference/spec-format.md`.
 3. **Generate** (static validation runs automatically, no ZIP is built on errors):
    ```bash

@@ -16,7 +16,7 @@ class ScaffoldTests(unittest.TestCase):
 
     def test_technical_name(self) -> None:
         self.assertEqual(default_technical_name("Muster Foerdertechnik AG"), "bt_demo_muster_foerdertechnik_ag")
-        self.assertEqual(default_technical_name("Nishcom AG"), "bt_demo_nishcom_ag")
+        self.assertEqual(default_technical_name("Musterhandel AG"), "bt_demo_musterhandel_ag")
 
     def test_skeleton_contains_resolved_sections(self) -> None:
         skeleton = build_skeleton(["mrp", "sales"], name="Muster AG", country="ch")

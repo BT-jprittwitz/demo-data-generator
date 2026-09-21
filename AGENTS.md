@@ -25,6 +25,12 @@ Installation smoke tests target the local Odoo 19 Enterprise (trial) instance in
 - **No fixed industry profiles/archetypes.** Compose each module per customer
   from the verified building blocks; there is no catalog of canned industry
   profiles. Principles: [ROADMAP.md](ROADMAP.md).
+- **Committed examples are anonymized.** Real customer specs must not be
+  committed (they contain customer names, addresses, VAT ids). Committed
+  `examples/*.json` use a fictional identity (company name starts with `Muster`,
+  e.g. "Muster Foerdertechnik AG"); enforced by
+  `engine/tests/test_examples_anonymized.py`. Keep a real spec untracked or in a
+  gitignored directory and commit only an anonymized copy.
 - Language of docs, skills and code comments: English. Language of the generated
   demo data: derived from the example company's country, unless the spec sets
   `language` explicitly (see `skills/odoo-demo-data/reference/verified-patterns.md`

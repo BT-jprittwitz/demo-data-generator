@@ -15,7 +15,7 @@ by default; that repo-local instance mounts this repo's ``output/`` as
 
 Stdlib only; no CLI coupling. Example:
 
-    python3 engine/docker/test_install.py --module bt_demo_nishcom
+    python3 engine/docker/test_install.py --module bt_demo_musterhandel
 """
 from __future__ import annotations
 

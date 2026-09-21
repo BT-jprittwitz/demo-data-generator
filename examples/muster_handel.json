@@ -1,18 +1,18 @@
 {
   "module": {
-    "technical_name": "bt_demo_nishcom",
-    "title": "Demo Data - Nishcom AG (Sales, Purchase, Inventory, Accounting, CRM, Helpdesk)",
+    "technical_name": "bt_demo_musterhandel",
+    "title": "Demo Data - Musterhandel AG (Sales, Purchase, Inventory, Accounting, CRM, Helpdesk)",
     "category": "Sales",
     "summary": "ERP demo for a Swiss e-commerce retailer: own company with a chart of accounts (CH), assortment, purchasing/vendors, stock, CRM pipeline, posted customer/vendor invoices and helpdesk tickets",
-    "description": "Sample demo-data module for Nishcom AG (Langenthal): 1 new company including the Swiss chart of accounts (l10n_ch), 5 contacts (vendors and customers), 12 products from the riding, agriculture, fishing and hunting niches, 4 CRM opportunities, 2 purchase orders, stock for 6 products, 1 customer invoice and 1 vendor bill (posted in the post_init_hook) as well as 3 helpdesk tickets."
+    "description": "Sample demo-data module for Musterhandel AG (Musterstadt): 1 new company including the Swiss chart of accounts (l10n_ch), 5 contacts (vendors and customers), 12 products from the riding, agriculture, fishing and hunting niches, 4 CRM opportunities, 2 purchase orders, stock for 6 products, 1 customer invoice and 1 vendor bill (posted in the post_init_hook) as well as 3 helpdesk tickets."
   },
   "accounting_app": "full",
   "company": {
     "xml_id": "demo_company",
-    "name": "Nishcom AG",
-    "street": "Chasseralstrasse 3",
-    "city": "Langenthal",
-    "zip": "4900",
+    "name": "Musterhandel AG",
+    "street": "Musterstrasse 3",
+    "city": "Musterstadt",
+    "zip": "9999",
     "country_xmlid": "base.ch",
     "vat": "CHE-142.028.625",
     "currency_xmlid": "base.CHF",

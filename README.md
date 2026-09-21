@@ -42,7 +42,7 @@ python3 -m engine.cli new --with mrp,sales --name "Muster AG" --country ch --out
 ## Writing a new customer specification
 
 Copy `examples/muster_foerdertechnik.json` (manufacturing customer) or
-`examples/nishcom_ag.json` (multi-app/Enterprise) as a template. Covers the verified
+`examples/muster_handel.json` (multi-app/Enterprise) as a template. Covers the verified
 object types: `res.company` (incl. chart of accounts), `res.partner`,
 `product.product`, `mrp.bom`, `mrp.production`, `sale.order`,
 `sale.order.template` (quotation templates), `crm.lead`, `purchase.order`,

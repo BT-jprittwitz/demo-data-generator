@@ -17,7 +17,7 @@ the reference files it points to. Steps:
    from the company country unless the user names a language explicitly
    (e.g. an English-only IT lead).
 2. Create a new spec under `examples/<customer>.json`, based on
-   `examples/nishcom_ag.json`; format per `reference/spec-format.md`.
+   `examples/muster_handel.json`; format per `reference/spec-format.md`.
 3. Build: `python3 -m engine.cli generate --spec examples/<customer>.json --out output`.
 4. Run the real install smoke test per `reference/install-test-protocol.md`
    (fresh DB, no `--test-enable`, Postgres cross-check).

@@ -77,6 +77,6 @@ company key, tasks have a stage). This catches data that the log cannot: a
 `--no-verify` skips the assertions.
 
 ```bash
-python3 engine/docker/test_install.py --module bt_demo_hold_spada
-python3 engine/docker/test_install.py --module bt_demo_hold_spada --spec examples/hold_spada.json
+python3 engine/docker/test_install.py --module bt_demo_muster_it
+python3 engine/docker/test_install.py --module bt_demo_muster_it --spec examples/muster_it.json
 ```

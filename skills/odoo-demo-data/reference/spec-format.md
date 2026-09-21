@@ -3,7 +3,7 @@
 A customer specification is a JSON file that `engine.spec_loader.load_spec`
 loads into dataclasses (`engine/model.py`) and validates. Template:
 `examples/muster_foerdertechnik.json` (manufacturing) or
-`examples/nishcom_ag.json` (multi-app/Enterprise).
+`examples/muster_handel.json` (multi-app/Enterprise).
 
 All object types are optional; only `module` and `company` are required.
 References between records use `xml_id` (module-local, without a dot).
@@ -47,7 +47,7 @@ Foreign xmlids (e.g. `base.ch`, `crm.stage_lead1`) are emitted 1:1 as `ref`.
 
 | Field | Required | Note |
 |---|---|---|
-| `technical_name` | yes | Short, e.g. `bt_demo_nishcom`. Yields module folder/zip. |
+| `technical_name` | yes | Short, e.g. `bt_demo_musterhandel`. Yields module folder/zip. |
 | `title` | yes | Display name. |
 | `summary` | yes | One sentence. |
 | `description` | no | Longer text. |
