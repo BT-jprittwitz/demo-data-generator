@@ -72,9 +72,22 @@ def data_checks(spec: CustomerSpec) -> list[DataCheck]:
         count_xmlids("boms", "mrp.bom", len(spec.boms))
     if spec.manufacturing_orders:
         count_xmlids("manufacturing_orders", "mrp.production", len(spec.manufacturing_orders))
-    sale_orders = len(spec.example_orders) + (1 if spec.quotation else 0)
+    sale_orders = len(spec.example_orders) + (1 if spec.quotation else 0) + len(spec.subscriptions)
     if sale_orders:
         count_xmlids("sale_orders", "sale.order", sale_orders)
+    if spec.subscriptions:
+        checks.append(
+            DataCheck(
+                label="subscriptions_with_plan",
+                expected=len(spec.subscriptions),
+                sql=(
+                    "SELECT count(*) FROM sale_order so "
+                    "JOIN ir_model_data d ON d.model = 'sale.order' AND d.res_id = so.id "
+                    f"WHERE d.module = '{module}' AND so.plan_id IS NOT NULL;"
+                ),
+                hint="plan_id was not stored - is sale_subscription installed?",
+            )
+        )
     if spec.quotation_templates:
         count_xmlids("quotation_templates", "sale.order.template", len(spec.quotation_templates))
     if spec.crm_leads:
@@ -105,20 +118,58 @@ def data_checks(spec: CustomerSpec) -> list[DataCheck]:
         count_xmlids("project_task_stages", "project.task.type", len(spec.project_task_stages))
     if spec.project_tasks:
         count_xmlids("project_tasks", "project.task", len(spec.project_tasks))
-        with_stage = sum(1 for t in spec.project_tasks if t.stage_xmlid)
-        if with_stage:
+        # Only tasks that declare a stage are checked, and each must have kept its
+        # declared stage: project.task._compute_stage_id resets a stage that is
+        # not linked to the project (verified-patterns 4.21). FSM tasks declare no
+        # stage and legitimately receive the project's default stage, so they are
+        # excluded.
+        staged_tasks = [t for t in spec.project_tasks if t.stage_xmlid]
+        if staged_tasks:
+            values = ", ".join(f"('{t.xml_id}', '{t.stage_xmlid}')" for t in staged_tasks)
             checks.append(
                 DataCheck(
-                    label="project_tasks_with_stage",
-                    expected=with_stage,
+                    label="project_tasks_with_declared_stage",
+                    expected=len(staged_tasks),
                     sql=(
                         "SELECT count(*) FROM project_task pt "
                         "JOIN ir_model_data d ON d.model = 'project.task' AND d.res_id = pt.id "
-                        f"WHERE d.module = '{module}' AND pt.stage_id IS NOT NULL;"
+                        "JOIN ir_model_data ds ON ds.model = 'project.task.type' "
+                        "AND ds.res_id = pt.stage_id "
+                        f"JOIN (VALUES {values}) AS expected(task_name, stage_name) "
+                        "ON d.name = expected.task_name AND ds.name = expected.stage_name "
+                        f"WHERE d.module = '{module}' AND ds.module = '{module}';"
                     ),
                     hint="a task's stage was reset - is it linked to the project (type_ids)?",
                 )
             )
+    if spec.maintenance_equipment_categories:
+        count_xmlids("maintenance_equipment_categories", "maintenance.equipment.category",
+                     len(spec.maintenance_equipment_categories))
+    if spec.maintenance_equipment:
+        count_xmlids("maintenance_equipment", "maintenance.equipment", len(spec.maintenance_equipment))
+    if spec.maintenance_requests:
+        count_xmlids("maintenance_requests", "maintenance.request", len(spec.maintenance_requests))
+    if spec.quality_points:
+        count_xmlids("quality_points", "quality.point", len(spec.quality_points))
+    if spec.quality_checks:
+        count_xmlids("quality_checks", "quality.check", len(spec.quality_checks))
+    if spec.quality_alerts:
+        count_xmlids("quality_alerts", "quality.alert", len(spec.quality_alerts))
+    recurring = [p for p in spec.products if p.recurring_invoice]
+    if recurring:
+        checks.append(
+            DataCheck(
+                label="products_recurring_invoice",
+                expected=len(recurring),
+                sql=(
+                    "SELECT count(*) FROM product_product pp "
+                    "JOIN product_template pt ON pt.id = pp.product_tmpl_id "
+                    "JOIN ir_model_data d ON d.model = 'product.product' AND d.res_id = pp.id "
+                    f"WHERE d.module = '{module}' AND pt.recurring_invoice;"
+                ),
+                hint="recurring_invoice was not stored - is sale_subscription installed?",
+            )
+        )
     return checks
 
 

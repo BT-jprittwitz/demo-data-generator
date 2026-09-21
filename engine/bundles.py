@@ -42,6 +42,13 @@ SECTION_ORDER: tuple[str, ...] = (
     "crm_leads",
     "purchase_orders",
     "stock_quants",
+    "quality_points",
+    "quality_checks",
+    "quality_alerts",
+    "maintenance_equipment_categories",
+    "maintenance_equipment",
+    "maintenance_requests",
+    "subscriptions",
     "invoices",
     "helpdesk_tickets",
     "projects",
@@ -156,6 +163,56 @@ BUNDLES: dict[str, Bundle] = {
         apps=("helpdesk",),
         requires=("contacts",),
         relevant_when="after-sales support / service tickets (Enterprise).",
+    ),
+    "maintenance": Bundle(
+        id="maintenance",
+        label="Maintenance",
+        sections=(
+            "maintenance_equipment_categories",
+            "maintenance_equipment",
+            "maintenance_requests",
+        ),
+        apps=("maintenance",),
+        requires=("contacts",),
+        relevant_when=(
+            "the company maintains equipment/assets with preventive or corrective "
+            "maintenance requests (Community app)."
+        ),
+    ),
+    "quality": Bundle(
+        id="quality",
+        label="Quality control",
+        sections=("quality_points", "quality_checks", "quality_alerts"),
+        apps=("quality_control",),
+        # Quality points use the warehouse manufacturing operation type as
+        # picking_type_ids -> mrp; alerts reference customers -> contacts.
+        requires=("mrp", "contacts"),
+        relevant_when=(
+            "incoming/outgoing/in-process quality control (control points, checks, "
+            "alerts) for regulated or certified production (Enterprise)."
+        ),
+    ),
+    "subscriptions": Bundle(
+        id="subscriptions",
+        label="Subscriptions",
+        sections=("subscriptions",),
+        apps=("sale_subscription",),
+        requires=("sales",),
+        relevant_when=(
+            "recurring revenue (service/maintenance contracts) invoiced periodically "
+            "(Enterprise; needs recurring products)."
+        ),
+    ),
+    "field_service": Bundle(
+        id="field_service",
+        label="Field service",
+        sections=(),
+        apps=("industry_fsm",),
+        requires=("project",),
+        relevant_when=(
+            "on-site interventions are planned and executed by technicians "
+            "(Enterprise; marks projects as FSM via project.is_fsm)."
+        ),
     ),
 }
 

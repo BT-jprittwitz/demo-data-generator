@@ -22,7 +22,8 @@ from .model import SAFE_PURCHASE_ORDER_STATES, SAFE_SALE_ORDER_STATES
 KNOWN_EXTERNAL_PREFIXES = (
     "base.", "uom.", "product.", "mrp.", "sale.", "account.",
     "crm.", "sales_team.", "purchase.", "stock.", "helpdesk.", "utm.",
-    "project.",
+    "project.", "maintenance.", "quality.", "quality_control.",
+    "sale_subscription.", "industry_fsm.",
 )
 
 REF_ATTR_RE = re.compile(r"ref\(['\"]([^'\"]+)['\"]\)")
@@ -101,6 +102,23 @@ def validate_module(module_dir: Path) -> list[Finding]:
     if set(manifest.get("depends", [])) & set(BASE_VAT_LOCALIZATIONS):
         for fname, root in trees.items():
             _check_partner_vat(fname, root, findings)
+
+    # product.template.recurring_invoice only exists with sale_subscription
+    # (verified-patterns 4.25). Setting it without the app aborts the install.
+    if "sale_subscription" not in set(manifest.get("depends", [])):
+        for fname, root in trees.items():
+            for rec in root.iter("record"):
+                if rec.get("model") != "product.product":
+                    continue
+                for f in rec.findall("field"):
+                    if f.get("name") == "recurring_invoice":
+                        findings.append(Finding(
+                            "error",
+                            f"{fname}: record {rec.get('id', '?')} (product.product) sets "
+                            f"recurring_invoice, but the manifest does not depend on "
+                            f"sale_subscription - the field does not exist then "
+                            f"(reference/verified-patterns.md 4.25)."
+                        ))
 
     models_present: set[str] = set()
     has_chart_function = False

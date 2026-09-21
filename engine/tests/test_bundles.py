@@ -56,6 +56,33 @@ class ResolveTests(unittest.TestCase):
         resolved = resolve(["purchase"])
         self.assertIn("stock", resolved.bundle_ids)
 
+    def test_quality_pulls_mrp(self) -> None:
+        resolved = resolve(["quality"])
+        self.assertIn("mrp", resolved.bundle_ids)
+        self.assertEqual(
+            resolved.sections,
+            ("partners", "products", "boms", "manufacturing_orders", "stock_quants",
+             "quality_points", "quality_checks", "quality_alerts"),
+        )
+        self.assertIn("quality_control", resolved.apps)
+
+    def test_field_service_pulls_project(self) -> None:
+        resolved = resolve(["field_service"])
+        self.assertIn("project", resolved.bundle_ids)
+        self.assertIn("industry_fsm", resolved.apps)
+
+    def test_maintenance_and_subscriptions_resolve(self) -> None:
+        self.assertEqual(
+            resolve(["maintenance"]).sections,
+            ("partners", "maintenance_equipment_categories", "maintenance_equipment",
+             "maintenance_requests"),
+        )
+        self.assertEqual(
+            resolve(["subscriptions"]).sections,
+            ("partners", "products", "quotation", "quotation_templates",
+             "example_orders", "subscriptions"),
+        )
+
     def test_unknown_bundle_raises(self) -> None:
         with self.assertRaises(BundleError):
             resolve(["does_not_exist"])

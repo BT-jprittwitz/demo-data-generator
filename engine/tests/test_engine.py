@@ -15,6 +15,10 @@ from engine.model import (
     CustomerSpec,
     Invoice,
     InvoiceLine,
+    MaintenanceEquipment,
+    MaintenanceEquipmentCategory,
+    MaintenanceRequest,
+    ManufacturingOrder,
     Module,
     Partner,
     Product,
@@ -23,12 +27,17 @@ from engine.model import (
     ProjectTaskStage,
     PurchaseOrder,
     PurchaseOrderLine,
+    QualityAlert,
+    QualityCheck,
+    QualityPoint,
     QuotationTemplate,
     QuotationTemplateLine,
     SaleOrder,
     SaleOrderLine,
     SpecError,
     StockQuant,
+    Subscription,
+    SubscriptionLine,
 )
 from engine.docker.test_install import analyze_log
 from engine.manifest import DEMO_USER_LOGIN, DEMO_USER_PASSWORD, depends, render_hooks_py
@@ -591,6 +600,141 @@ class VatValidationTests(unittest.TestCase):
             module_dir = self._write_partner_module(tmp, ["account", "l10n_ch"], "DE118273456")
             findings = validate_module(module_dir)
             self.assertFalse(any("4.19" in f.message for f in findings))
+
+
+class AdjacentProcessTests(unittest.TestCase):
+    """Maintenance, quality control, subscriptions and field service
+    (verified-patterns.md 4.22-4.26)."""
+
+    def _spec(self, **overrides) -> CustomerSpec:
+        base = dict(
+            module=Module(technical_name="bt_demo_adj", title="A", summary="A", description="A"),
+            company=Company(name="Test AG", street="Weg 1", city="Stadt", zip="1",
+                            country_xmlid="base.de"),
+            partners=[
+                Partner(xml_id="p1", name="Kunde AG", country_xmlid="base.de",
+                        street="Weg 1", city="Stadt", zip="1111", customer_rank=1),
+            ],
+            products=[
+                Product(xml_id="comp", name="Teil", type="consu", sale_ok=False,
+                        purchase_ok=True, standard_price=5.0),
+                Product(xml_id="fin", name="Anlage", type="consu", sale_ok=True,
+                        purchase_ok=False, list_price=100.0),
+                Product(xml_id="svc", name="Wartung", type="service", sale_ok=True,
+                        purchase_ok=False, list_price=10.0, recurring_invoice=True),
+            ],
+            boms=[Bom(xml_id="bom1", product_xmlid="fin",
+                      lines=[BomLine(product_xmlid="comp", qty=2.0)])],
+            manufacturing_orders=[ManufacturingOrder(xml_id="mo1", product_xmlid="fin", qty=1.0)],
+        )
+        base.update(overrides)
+        return CustomerSpec(**base)
+
+    def test_rejects_invalid_maintenance_type(self):
+        with self.assertRaises(SpecError):
+            MaintenanceRequest(xml_id="m1", name="X", maintenance_type="breakdown")
+
+    def test_rejects_move_line_measure_on(self):
+        # measure_on='move_line' is forbidden with an mrp operation type.
+        with self.assertRaises(SpecError):
+            QualityPoint(xml_id="q1", name="Q", measure_on="move_line")
+
+    def test_quality_points_require_mrp(self):
+        with self.assertRaises(SpecError):
+            self._spec(
+                boms=[], manufacturing_orders=[],
+                quality_points=[QualityPoint(xml_id="q1", name="Q")],
+            )
+
+    def test_rejects_invalid_subscription_plan(self):
+        with self.assertRaises(SpecError):
+            Subscription(xml_id="s1", partner_xmlid="p1", plan="weekly")
+
+    def test_rejects_dangling_quality_check_production(self):
+        with self.assertRaises(SpecError):
+            self._spec(
+                quality_points=[QualityPoint(xml_id="q1", name="Q")],
+                quality_checks=[QualityCheck(xml_id="c1", point_xmlid="q1",
+                                             production_xmlid="missing")],
+            )
+
+    def test_builds_adjacent_process_files_and_depends(self):
+        spec = self._spec(
+            maintenance_equipment_categories=[MaintenanceEquipmentCategory(xml_id="cat1", name="Anlagen")],
+            maintenance_equipment=[MaintenanceEquipment(xml_id="eq1", name="BHKW 1",
+                                                        category_xmlid="cat1", partner_xmlid="p1")],
+            maintenance_requests=[MaintenanceRequest(xml_id="mr1", name="Wartung",
+                                                     equipment_xmlid="eq1",
+                                                     stage_xmlid="maintenance.stage_0")],
+            quality_points=[QualityPoint(xml_id="qp1", name="QCP-1", product_xmlids=["fin"],
+                                         test_type="passfail")],
+            quality_checks=[QualityCheck(xml_id="qc1", point_xmlid="qp1",
+                                         production_xmlid="mo1", product_xmlid="fin",
+                                         quality_state="pass")],
+            quality_alerts=[QualityAlert(xml_id="qa1", name="Abweichung",
+                                         product_xmlid="fin", partner_xmlid="p1")],
+            subscriptions=[Subscription(xml_id="sub1", partner_xmlid="p1", plan="month",
+                                        lines=[SubscriptionLine(product_xmlid="svc", qty=1.0)])],
+            projects=[Project(xml_id="prj_fsm", name="Einsätze", is_fsm=True)],
+            project_tasks=[ProjectTask(xml_id="ft1", name="Einsatz", project_xmlid="prj_fsm",
+                                       partner_xmlid="p1")],
+        )
+        deps = depends(spec)
+        for app in ("maintenance", "quality_control", "sale_subscription", "industry_fsm"):
+            self.assertIn(app, deps)
+        with TemporaryDirectory() as tmp:
+            module_dir = write_module_dir(spec, Path(tmp))
+            findings = validate_module(module_dir)
+            errors = [f for f in findings if f.level == "error"]
+            self.assertEqual(errors, [], f"Unexpected validation errors: {errors}")
+            data_dir = module_dir / "data"
+            for name in ("maintenance_team_data.xml", "maintenance_equipment_category_data.xml",
+                         "maintenance_equipment_data.xml", "maintenance_request_data.xml",
+                         "quality_point_data.xml", "quality_check_data.xml",
+                         "quality_alert_data.xml", "sale_order_subscription_data.xml"):
+                self.assertTrue((data_dir / name).exists(), f"{name} is missing")
+            project = (data_dir / "project_project_data.xml").read_text(encoding="utf-8")
+            self.assertIn("is_fsm", project)
+            self.assertNotIn("type_ids", project.split("prj_fsm")[1])
+            products = (data_dir / "product_data.xml").read_text(encoding="utf-8")
+            self.assertIn("recurring_invoice", products)
+
+    def test_rejects_recurring_product_on_non_draft_order(self):
+        # sale_subscription._constraint_subscription_plan would abort the install.
+        with self.assertRaises(SpecError):
+            self._spec(example_orders=[
+                SaleOrder(xml_id="so1", partner_xmlid="p1", state="sent", lines=[
+                    SaleOrderLine(product_xmlid="svc", qty=1.0, description="Wartung"),
+                ]),
+            ])
+
+    def test_enertec_example_parses_new_sections(self):
+        spec = load_spec(json.loads(
+            (REPO_ROOT / "examples" / "enertec_kraftwerke.json").read_text(encoding="utf-8")
+        ))
+        self.assertTrue(spec.needs_maintenance)
+        self.assertTrue(spec.needs_quality)
+        self.assertTrue(spec.needs_subscriptions)
+        self.assertTrue(spec.needs_field_service)
+        self.assertTrue(any(p.recurring_invoice for p in spec.products))
+
+    def test_validate_flags_recurring_invoice_without_subscription(self):
+        with TemporaryDirectory() as tmp:
+            module_dir = Path(tmp) / "bt_demo_recurring"
+            data_dir = module_dir / "data"
+            data_dir.mkdir(parents=True)
+            (module_dir / "__manifest__.py").write_text(
+                '{"depends": ["sale_management"], "data": ["data/product_data.xml"]}',
+                encoding="utf-8",
+            )
+            (data_dir / "product_data.xml").write_text(
+                '<?xml version="1.0"?><odoo><record id="p1" model="product.product">'
+                '<field name="name">P</field><field name="recurring_invoice">True</field>'
+                "</record></odoo>",
+                encoding="utf-8",
+            )
+            findings = validate_module(module_dir)
+            self.assertTrue(any("4.25" in f.message for f in findings))
 
 
 class InstallLogTests(unittest.TestCase):

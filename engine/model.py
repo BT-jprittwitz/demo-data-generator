@@ -43,6 +43,30 @@ VALID_TASK_PRIORITIES = {"0", "1", "2", "3"}
 # addons/project/models/project_project.py (Selection, required, default 'portal').
 VALID_PROJECT_PRIVACY = {"followers", "invited_users", "employees", "portal"}
 
+# maintenance.request.maintenance_type: verified against
+# addons/maintenance/models/maintenance.py (Selection: corrective/preventive).
+VALID_MAINTENANCE_TYPES = {"corrective", "preventive"}
+
+# quality.check.quality_state: verified against
+# enterprise/quality/models/quality.py (Selection: none/pass/fail).
+VALID_QUALITY_STATES = {"none", "pass", "fail"}
+
+# quality.point.test_type / quality.check.test_type_id: a m2o to
+# quality.point.test_type, addressed by its `technical_name`. The two values
+# shipped with the Quality app (quality_control) are verified (verified-patterns
+# 4.24).
+VALID_QUALITY_TEST_TYPES = {"passfail", "measure"}
+
+# quality.point.measure_on / quality.check.measure_on: 'move_line' is forbidden
+# with an mrp_operation picking type (quality_mrp raises a UserError), so only
+# these two are allowed for manufacturing quality (verified-patterns 4.24).
+VALID_QUALITY_MEASURE_ON = {"product", "operation"}
+
+# subscription plan shorthand -> shipped sale.subscription.plan xmlid
+# (sale_subscription/data/sale_subscription_data.xml, noupdate). Verified: only
+# these two plans ship as data (verified-patterns 4.25).
+VALID_SUBSCRIPTION_PLANS = {"month", "year"}
+
 # Default demo-data language per country. Key is the lower-case ISO code taken
 # from the country xmlid suffix (e.g. "base.ch" -> "ch"). This is a primary
 # language per country; the spec's optional "language" field overrides it.
@@ -65,11 +89,12 @@ COUNTRY_DEFAULT_LANGUAGE = {
 
 # Automatically generated team names per language prefix. A spec may override
 # them explicitly via "crm_team_name" / "helpdesk_team_name".
+# Tuple order: (crm, helpdesk, maintenance).
 _TEAM_NAMES = {
-    "de": ("Vertrieb", "Kundendienst"),
-    "en": ("Sales", "Customer Service"),
-    "fr": ("Ventes", "Service client"),
-    "it": ("Vendite", "Servizio clienti"),
+    "de": ("Vertrieb", "Kundendienst", "Instandhaltung"),
+    "en": ("Sales", "Customer Service", "Maintenance"),
+    "fr": ("Ventes", "Service client", "Maintenance"),
+    "it": ("Vendite", "Servizio clienti", "Manutenzione"),
 }
 
 
@@ -146,6 +171,11 @@ class Product:
     weight: float | None = None
     volume: float | None = None
     description_sale: str | None = None
+    # product.template.recurring_invoice: only exists with `sale_subscription`
+    # (verified-patterns 4.25). None = do not touch the field (so modules without
+    # the Subscriptions app install fine); validate.py flags a set value when the
+    # manifest does not depend on sale_subscription.
+    recurring_invoice: bool | None = None
 
     def __post_init__(self) -> None:
         if self.type not in VALID_PRODUCT_TYPES:
@@ -431,6 +461,12 @@ class Project:
     date_start: str | None = None
     date_end: str | None = None
     privacy_visibility: str | None = None
+    # project.project.is_fsm (added by `industry_fsm`, Enterprise): marks the
+    # project as a Field Service project. Verified: a FSM project requires a
+    # company_id (DB CHECK _company_id_required_for_fsm_project) and its task
+    # stages are auto-assigned by industry_fsm's create() override, so the
+    # renderer omits type_ids for FSM projects (verified-patterns 4.26).
+    is_fsm: bool = False
 
     def __post_init__(self) -> None:
         if self.privacy_visibility is not None and self.privacy_visibility not in VALID_PROJECT_PRIVACY:
@@ -470,6 +506,211 @@ class ProjectTask:
 
 
 @dataclass
+class MaintenanceEquipmentCategory:
+    """``maintenance.equipment.category`` (module ``maintenance``, Community).
+
+    Verified against addons/maintenance/models/maintenance.py: only ``name`` is
+    required; ``company_id`` defaults to ``env.company``. (verified-patterns 4.22)
+    """
+
+    xml_id: str
+    name: str
+    note: str | None = None
+
+
+@dataclass
+class MaintenanceEquipment:
+    """``maintenance.equipment``.
+
+    Verified: only ``name`` is required. ``effective_date`` (required in the
+    mixin) has a default of ``context_today`` and is left to the ORM.
+    ``serial_no`` is UNIQUE. ``category_id``/``partner_id`` are ``check_company``
+    and must belong to the demo company. (verified-patterns 4.22)
+    """
+
+    xml_id: str
+    name: str
+    category_xmlid: str | None = None
+    partner_xmlid: str | None = None
+    serial_no: str | None = None
+    model: str | None = None
+    assign_date: str | None = None
+    warranty_date: str | None = None
+    cost: float | None = None
+    note: str | None = None
+
+
+@dataclass
+class MaintenanceRequest:
+    """``maintenance.request``.
+
+    Verified: only ``name`` is required; ``company_id`` is required with default
+    ``env.company`` and ``maintenance_team_id`` is required with a default that
+    searches a team for the company (the engine creates a demo team explicitly).
+    ``stage_id`` defaults to the first stage (``maintenance.stage_0`` "New
+    Request"). ``create()`` clears ``close_date`` when the stage is not done and
+    fills it when the stage is done. (verified-patterns 4.22)
+    """
+
+    xml_id: str
+    name: str
+    equipment_xmlid: str | None = None
+    maintenance_type: str = "corrective"
+    stage_xmlid: str = "maintenance.stage_0"
+    priority: str | None = None
+    description: str | None = None
+    request_date: str | None = None
+    schedule_date: str | None = None
+    close_date: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.maintenance_type not in VALID_MAINTENANCE_TYPES:
+            raise SpecError(
+                f"MaintenanceRequest {self.xml_id!r}: maintenance_type="
+                f"{self.maintenance_type!r} invalid (allowed: "
+                f"{sorted(VALID_MAINTENANCE_TYPES)}, see maintenance/models/maintenance.py)."
+            )
+        if self.priority is not None and self.priority not in VALID_TASK_PRIORITIES:
+            raise SpecError(
+                f"MaintenanceRequest {self.xml_id!r}: priority={self.priority!r} invalid "
+                f"(allowed: {sorted(VALID_TASK_PRIORITIES)})."
+            )
+
+
+@dataclass
+class QualityPoint:
+    """``quality.point`` (Quality app ``quality_control``, Enterprise).
+
+    Verified: ``name``, ``team_id``, ``picking_type_ids``, ``company_id`` and
+    ``test_type_id`` are required; ``team_id``/``test_type_id`` have defaults.
+    The engine sets the company's manufacturing operation type as
+    ``picking_type_ids`` (so ``quality`` requires ``mrp``) and uses the shipped
+    global team ``quality.quality_alert_team0``. ``test_type`` is the
+    ``technical_name`` of ``quality.point.test_type`` (passfail/measure).
+    ``measure_on='move_line'`` is forbidden with an mrp operation type.
+    (verified-patterns 4.24)
+    """
+
+    xml_id: str
+    name: str
+    title: str | None = None
+    product_xmlids: list[str] = field(default_factory=list)
+    test_type: str = "passfail"
+    measure_on: str = "product"
+    note: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.test_type not in VALID_QUALITY_TEST_TYPES:
+            raise SpecError(
+                f"QualityPoint {self.xml_id!r}: test_type={self.test_type!r} invalid "
+                f"(allowed: {sorted(VALID_QUALITY_TEST_TYPES)})."
+            )
+        if self.measure_on not in VALID_QUALITY_MEASURE_ON:
+            raise SpecError(
+                f"QualityPoint {self.xml_id!r}: measure_on={self.measure_on!r} invalid "
+                f"(allowed: {sorted(VALID_QUALITY_MEASURE_ON)}; 'move_line' is forbidden "
+                f"with an mrp operation type)."
+            )
+
+
+@dataclass
+class QualityCheck:
+    """``quality.check``.
+
+    Verified: ``team_id``/``company_id``/``test_type_id``/``measure_on`` are
+    required but have defaults; setting ``point_id`` computes title/note/team/
+    test_type/measure_on from the point. ``create()`` only fills ``name`` from a
+    sequence (no business logic). A check's ``product_id`` must be one of the
+    linked production order's finished products
+    (``_check_allowed_product_ids_with_production``). (verified-patterns 4.24)
+    """
+
+    xml_id: str
+    point_xmlid: str
+    production_xmlid: str | None = None
+    product_xmlid: str | None = None
+    quality_state: str = "none"
+    note: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.quality_state not in VALID_QUALITY_STATES:
+            raise SpecError(
+                f"QualityCheck {self.xml_id!r}: quality_state={self.quality_state!r} "
+                f"invalid (allowed: {sorted(VALID_QUALITY_STATES)})."
+            )
+
+
+@dataclass
+class QualityAlert:
+    """``quality.alert``.
+
+    Verified: ``company_id`` and ``team_id`` are required with defaults;
+    ``stage_id`` defaults to the first shipped stage
+    (``quality.quality_alert_stage_0`` "New"). ``partner_id`` is ``check_company``.
+    (verified-patterns 4.24)
+    """
+
+    xml_id: str
+    name: str
+    product_xmlid: str | None = None
+    partner_xmlid: str | None = None
+    production_xmlid: str | None = None
+    stage_xmlid: str = "quality.quality_alert_stage_0"
+    priority: str | None = None
+    description: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.priority is not None and self.priority not in VALID_TASK_PRIORITIES:
+            raise SpecError(
+                f"QualityAlert {self.xml_id!r}: priority={self.priority!r} invalid "
+                f"(allowed: {sorted(VALID_TASK_PRIORITIES)})."
+            )
+
+
+@dataclass
+class SubscriptionLine:
+    product_xmlid: str
+    qty: float = 1.0
+    description: str | None = None
+
+
+@dataclass
+class Subscription:
+    """A recurring subscription (module ``sale_subscription``, Enterprise).
+
+    In Odoo 19 there is NO ``sale.subscription`` model: a subscription is a
+    ``sale.order`` with ``plan_id`` set (``is_subscription`` is computed from it).
+    Verified: creating it in ``state='draft'`` is safe - no invoices/pickings are
+    generated (invoices only come from the recurring cron/action), the Python
+    constraint ``_constraint_subscription_plan`` exempts draft orders, and
+    ``create()`` only defaults ``subscription_state`` to ``'1_draft'``. Lines of
+    ``recurring_invoice`` products become recurring.
+    (verified-patterns 4.25)
+    """
+
+    xml_id: str
+    partner_xmlid: str
+    plan: str = "month"
+    state: str = "draft"
+    start_date: str | None = None
+    lines: list[SubscriptionLine] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.plan not in VALID_SUBSCRIPTION_PLANS:
+            raise SpecError(
+                f"Subscription {self.xml_id!r}: plan={self.plan!r} invalid "
+                f"(allowed: {sorted(VALID_SUBSCRIPTION_PLANS)}; only these two plans "
+                f"ship as data with sale_subscription)."
+            )
+        if self.state not in SAFE_SALE_ORDER_STATES:
+            raise SpecError(
+                f"Subscription {self.xml_id!r}: state={self.state!r} is not among the "
+                f"verified safe values {sorted(SAFE_SALE_ORDER_STATES)} - a draft "
+                f"subscription never triggers invoice generation (verified-patterns 4.25)."
+            )
+
+
+@dataclass
 class Module:
     technical_name: str
     title: str
@@ -497,6 +738,16 @@ class CustomerSpec:
     projects: list[Project] = field(default_factory=list)
     project_task_stages: list[ProjectTaskStage] = field(default_factory=list)
     project_tasks: list[ProjectTask] = field(default_factory=list)
+    # Maintenance (module `maintenance`, Community).
+    maintenance_equipment_categories: list[MaintenanceEquipmentCategory] = field(default_factory=list)
+    maintenance_equipment: list[MaintenanceEquipment] = field(default_factory=list)
+    maintenance_requests: list[MaintenanceRequest] = field(default_factory=list)
+    # Quality control (app `quality_control`, Enterprise; requires mrp).
+    quality_points: list[QualityPoint] = field(default_factory=list)
+    quality_checks: list[QualityCheck] = field(default_factory=list)
+    quality_alerts: list[QualityAlert] = field(default_factory=list)
+    # Subscriptions (app `sale_subscription`, Enterprise).
+    subscriptions: list[Subscription] = field(default_factory=list)
     # Demo-data language. None -> derived from the company country (see
     # derive_language). Overridable per spec (e.g. an English-only IT lead).
     language: str | None = None
@@ -588,9 +839,96 @@ class CustomerSpec:
             if task.partner_xmlid:
                 _require(task.partner_xmlid, partner_ids, f"ProjectTask {task.xml_id}: partner_xmlid")
 
+        maintenance_category_ids = {c.xml_id for c in self.maintenance_equipment_categories}
+        maintenance_equipment_ids = {e.xml_id for e in self.maintenance_equipment}
+        for equipment in self.maintenance_equipment:
+            if equipment.category_xmlid:
+                _require(equipment.category_xmlid, maintenance_category_ids,
+                         f"MaintenanceEquipment {equipment.xml_id}: category_xmlid")
+            if equipment.partner_xmlid:
+                _require(equipment.partner_xmlid, partner_ids,
+                         f"MaintenanceEquipment {equipment.xml_id}: partner_xmlid")
+        for request in self.maintenance_requests:
+            if request.equipment_xmlid:
+                _require(request.equipment_xmlid, maintenance_equipment_ids,
+                         f"MaintenanceRequest {request.xml_id}: equipment_xmlid")
+
+        # Quality points need the company warehouse's manufacturing operation
+        # type as picking_type_ids, which only exists with mrp (the `quality`
+        # bundle therefore requires `mrp`). (verified-patterns 4.24)
+        if self.quality_points and not self.needs_mrp:
+            raise SpecError(
+                "quality_points present but no boms/manufacturing_orders: a quality "
+                "point's picking_type_ids uses the warehouse manufacturing operation "
+                "type (mrp), so the `quality` bundle requires `mrp`."
+            )
+        manufacturing_order_ids = {mo.xml_id for mo in self.manufacturing_orders}
+        quality_point_ids = {p.xml_id for p in self.quality_points}
+        for point in self.quality_points:
+            for product_xmlid in point.product_xmlids:
+                _require(product_xmlid, product_ids,
+                         f"QualityPoint {point.xml_id}: product_xmlids")
+        for check in self.quality_checks:
+            _require(check.point_xmlid, quality_point_ids, f"QualityCheck {check.xml_id}: point_xmlid")
+            if check.production_xmlid:
+                _require(check.production_xmlid, manufacturing_order_ids,
+                         f"QualityCheck {check.xml_id}: production_xmlid")
+            if check.product_xmlid:
+                _require(check.product_xmlid, product_ids, f"QualityCheck {check.xml_id}: product_xmlid")
+        for alert in self.quality_alerts:
+            if alert.product_xmlid:
+                _require(alert.product_xmlid, product_ids, f"QualityAlert {alert.xml_id}: product_xmlid")
+            if alert.partner_xmlid:
+                _require(alert.partner_xmlid, partner_ids, f"QualityAlert {alert.xml_id}: partner_xmlid")
+            if alert.production_xmlid:
+                _require(alert.production_xmlid, manufacturing_order_ids,
+                         f"QualityAlert {alert.xml_id}: production_xmlid")
+        for subscription in self.subscriptions:
+            _require(subscription.partner_xmlid, partner_ids,
+                     f"Subscription {subscription.xml_id}: partner_xmlid")
+            for line in subscription.lines:
+                _require(line.product_xmlid, product_ids,
+                         f"Subscription {subscription.xml_id}: line product_xmlid")
+
+        # sale_subscription._constraint_subscription_plan raises on a non-draft
+        # sale.order that has a recurring product line but no plan_id
+        # (sale_subscription/models/sale_order.py _check_recurring_plan_mismatch).
+        # Draft orders are exempt; subscriptions carry a plan. (verified-patterns 4.25)
+        recurring_product_ids = {p.xml_id for p in self.products if p.recurring_invoice}
+        for order in ([self.quotation] if self.quotation else []) + self.example_orders:
+            if order.state != "draft":
+                for line in order.lines:
+                    if line.product_xmlid in recurring_product_ids:
+                        raise SpecError(
+                            f"SaleOrder {order.xml_id}: recurring product "
+                            f"{line.product_xmlid!r} on a non-draft order (state="
+                            f"{order.state!r}) needs a subscription plan - "
+                            f"sale_subscription raises 'Please add a recurring plan on the "
+                            f"subscription or remove the recurring product'. Use "
+                            f"state='draft' or the subscriptions section "
+                            f"(verified-patterns 4.25)."
+                        )
+
     @property
     def needs_project(self) -> bool:
         return bool(self.projects) or bool(self.project_task_stages) or bool(self.project_tasks)
+
+    @property
+    def needs_maintenance(self) -> bool:
+        return bool(self.maintenance_equipment_categories) or bool(self.maintenance_equipment) \
+            or bool(self.maintenance_requests)
+
+    @property
+    def needs_quality(self) -> bool:
+        return bool(self.quality_points) or bool(self.quality_checks) or bool(self.quality_alerts)
+
+    @property
+    def needs_subscriptions(self) -> bool:
+        return bool(self.subscriptions)
+
+    @property
+    def needs_field_service(self) -> bool:
+        return any(project.is_fsm for project in self.projects)
 
     @property
     def needs_mrp(self) -> bool:
@@ -615,7 +953,9 @@ class CustomerSpec:
         # occurred, see verified-patterns.md 4.10). Stock likewise. Manufacturing
         # needs it too (mrp.production.picking_type_id <- warehouse.manu_type_id);
         # the dependency is one-sided: warehouse never implies manufacturing.
-        return self.needs_purchase or self.needs_stock or self.needs_mrp
+        # Quality points use the warehouse manufacturing operation type as
+        # picking_type_ids (verified-patterns.md 4.24).
+        return self.needs_purchase or self.needs_stock or self.needs_mrp or bool(self.quality_points)
 
     @property
     def needs_account(self) -> bool:
@@ -642,6 +982,10 @@ class CustomerSpec:
         if self.helpdesk_team_name:
             return self.helpdesk_team_name
         return default_team_names(self.resolved_language)[1]
+
+    @property
+    def resolved_maintenance_team_name(self) -> str:
+        return default_team_names(self.resolved_language)[2]
 
 
 def _require(xmlid: str, known: set[str], where: str) -> None:

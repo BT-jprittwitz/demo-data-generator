@@ -112,7 +112,7 @@ class DataChecksTests(unittest.TestCase):
         self.assertEqual(labels["projects"], 1)
         self.assertEqual(labels["project_task_stages"], 1)
         self.assertEqual(labels["project_tasks"], 2)
-        self.assertEqual(labels["project_tasks_with_stage"], 1)
+        self.assertEqual(labels["project_tasks_with_declared_stage"], 1)
         self.assertEqual(labels["quotation_templates"], 1)
 
 

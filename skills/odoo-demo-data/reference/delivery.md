@@ -57,6 +57,28 @@ data where possible) and keys **all** demo data to it:
    **projects** (`project.project` + `project.task` + task stages). Verified
    against Enterprise 19.0 and by the spec-aware Postgres assertions of the
    smoke test (see `install-test-protocol.md`). New verified patterns 4.20/4.21.
+8. `bt_demo_enertec` (`examples/enertec_kraftwerke.json`) — German manufacturer
+   of made-to-measure combined heat and power plants (enertec Kraftwerke GmbH,
+   Muehlhausen/Thuringia): `de_skr04` chart of accounts, component + finished-goods
+   catalog, bills of materials and draft manufacturing orders, purchasing, stock,
+   CRM pipeline, project delivery (planning -> fabrication -> installation ->
+   commissioning), posted customer/vendor invoices and after-sales service
+   tickets. Bundles: `mrp`, `purchase`, `sales`, `crm`, `project`, `accounting`,
+   `helpdesk`. Verified against Enterprise 19.0 including the spec-aware Postgres
+   assertions. Open demand signals at the time: `maintenance`, quality control
+   (ISO 9001 / TÜV), recurring service revenue (`sale_subscription`) and field
+   service.
+9. Same `bt_demo_enertec` extended with the four former demand signals as new
+   building blocks (verified-patterns 4.22-4.26):
+   **maintenance** (Community: equipment categories/equipment/requests, demo
+   `maintenance.team`), **quality control** (Enterprise `quality_control`:
+   `quality.point`/`check`/`alert`), **subscriptions** (Enterprise
+   `sale_subscription`: `sale.order` + `plan_id` + recurring products) and
+   **field service** (Enterprise `industry_fsm`: `project.is_fsm`). Verified
+   against Enterprise 19.0 and by the spec-aware Postgres assertions (including
+   `subscriptions_with_plan` and `products_recurring_invoice`). New landmine
+   found and documented: a recurring product on a non-draft `sale.order` raises
+   `_constraint_subscription_plan` (verified-patterns 4.25).
 
 ## Reference material
 

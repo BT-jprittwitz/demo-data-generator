@@ -1,0 +1,796 @@
+{
+  "module": {
+    "technical_name": "bt_demo_enertec",
+    "title": "Demo Data - enertec Kraftwerke GmbH (Manufacturing, Sales, Purchase, Inventory, Accounting, CRM, Projects, Helpdesk)",
+    "category": "Manufacturing",
+    "summary": "ERP demo for a German manufacturer of made-to-measure combined heat and power plants (CHP/BHKW): own company with the German chart of accounts (SKR04), component and finished-goods catalog, bills of materials, draft manufacturing orders, procurement, stock, a CRM pipeline, project delivery, posted customer/vendor invoices and after-sales service tickets.",
+    "description": "Sample demo-data module for enertec Kraftwerke GmbH (Muehlhausen, Thuringia, Germany), a manufacturer of combined heat and power plants (Blockheizkraftwerke, BHKW) from 20 to 530 kW el., made to measure for agriculture, municipalities and industry. It creates 1 new company including the German chart of accounts (l10n_de, SKR04), 8 contacts (component suppliers and business customers), 13 products (gas engines, generators, heat exchangers, control cabinets, frames and acoustic enclosures as components; three finished CHP units; commissioning, maintenance and remote-monitoring services), 3 bills of materials, 3 draft manufacturing orders, 4 CRM opportunities, 3 purchase orders, stock for 8 products, 3 posted invoices/bills (posted in the post_init_hook), 4 helpdesk tickets, 3 quotation templates, 1 quotation, 2 example sales orders and 2 delivery projects with tasks."
+  },
+  "accounting_app": "full",
+  "company": {
+    "xml_id": "demo_company",
+    "name": "enertec Kraftwerke GmbH",
+    "street": "Treffurter Weg 11",
+    "city": "Mühlhausen",
+    "zip": "99974",
+    "country_xmlid": "base.de",
+    "vat": "DE306014067",
+    "currency_xmlid": "base.EUR",
+    "chart_template": "de_skr04"
+  },
+  "partners": [
+    {
+      "xml_id": "partner_supplier_motoren",
+      "name": "Motorenwerk Halle GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE160348219",
+      "street": "Dieselstraße 14",
+      "city": "Halle (Saale)",
+      "zip": "06112",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_supplier_generatoren",
+      "name": "Elektro-Generatorenbau Dresden GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE225471905",
+      "street": "Elbstraße 27",
+      "city": "Dresden",
+      "zip": "01097",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_supplier_waermetauscher",
+      "name": "Wärmetauscher-Technik Nord GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE301984758",
+      "street": "Hafenallee 9",
+      "city": "Bremen",
+      "zip": "28217",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_supplier_steuerung",
+      "name": "Steuerungstechnik Erfurt GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE278365411",
+      "street": "Am Anger 33",
+      "city": "Erfurt",
+      "zip": "99084",
+      "supplier_rank": 1,
+      "customer_rank": 0
+    },
+    {
+      "xml_id": "partner_customer_agrar",
+      "name": "Agrar-Energie Mühlhausen eG",
+      "country_xmlid": "base.de",
+      "vat": "DE142907689",
+      "street": "Feldstraße 5",
+      "city": "Mühlhausen",
+      "zip": "99974",
+      "supplier_rank": 0,
+      "customer_rank": 1
+    },
+    {
+      "xml_id": "partner_customer_stadtwerke",
+      "name": "Stadtwerke Nordhausen GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE319457226",
+      "street": "Bahnhofstraße 12",
+      "city": "Nordhausen",
+      "zip": "99734",
+      "supplier_rank": 0,
+      "customer_rank": 1
+    },
+    {
+      "xml_id": "partner_customer_lebensmittel",
+      "name": "Lebensmittelwerk Eichsfeld GmbH",
+      "country_xmlid": "base.de",
+      "vat": "DE240813575",
+      "street": "Industriestraße 8",
+      "city": "Heilbad Heiligenstadt",
+      "zip": "37308",
+      "supplier_rank": 0,
+      "customer_rank": 1
+    },
+    {
+      "xml_id": "partner_customer_reinhardt",
+      "name": "Landwirtschaftsbetrieb Reinhardt GbR",
+      "country_xmlid": "base.de",
+      "vat": "DE290718458",
+      "street": "Dorfstraße 21",
+      "city": "Bad Langensalza",
+      "zip": "99947",
+      "supplier_rank": 0,
+      "customer_rank": 1
+    }
+  ],
+  "products": [
+    {
+      "xml_id": "product_comp_engine",
+      "name": "Gas-Ottomotor 150 kW (Erdgas/Biogas)",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 28500.0,
+      "default_code": "COMP-MOTOR-150",
+      "barcode": "4095555000014",
+      "weight": 1450.0,
+      "description_sale": "Vierzylinder-Gasmotor für den Dauerbetrieb, wahlweise mit Erdgas oder Biogas betreibbar."
+    },
+    {
+      "xml_id": "product_comp_generator",
+      "name": "Synchrongenerator 200 kVA",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 12400.0,
+      "default_code": "COMP-GEN-200",
+      "barcode": "4095555000021",
+      "weight": 780.0,
+      "description_sale": "Bürstenloser Synchrongenerator mit 200 kVA Scheinleistung für den Netzparallelbetrieb."
+    },
+    {
+      "xml_id": "product_comp_heat",
+      "name": "Abgaswärmetauscher 250 kW",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 6800.0,
+      "default_code": "COMP-WT-250",
+      "barcode": "4095555000038",
+      "weight": 420.0,
+      "description_sale": "Edelstahl-Abgaswärmetauscher zur Nutzung der Motorabwärme im Heiznetz."
+    },
+    {
+      "xml_id": "product_comp_control",
+      "name": "Steuerungsschrank enertec Control 4.0",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 9500.0,
+      "default_code": "COMP-CTRL-4",
+      "barcode": "4095555000045",
+      "weight": 95.0,
+      "description_sale": "Schaltschrank mit SPS-Steuerung, Netzsynchronisation und Anbindung an die Fernüberwachung."
+    },
+    {
+      "xml_id": "product_comp_frame",
+      "name": "Grundrahmen Stahlbau (schallgedämmt)",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 5200.0,
+      "default_code": "COMP-RAHMEN-S",
+      "barcode": "4095555000052",
+      "weight": 1250.0,
+      "description_sale": "Verschweißter Grundrahmen mit Schwingungsdämpfern und integrierter Ölwanne."
+    },
+    {
+      "xml_id": "product_comp_enclosure",
+      "name": "Schallschutzhaube 85 dB(A)",
+      "type": "consu",
+      "sale_ok": false,
+      "purchase_ok": true,
+      "list_price": 0.0,
+      "standard_price": 3900.0,
+      "default_code": "COMP-HAUBE-85",
+      "barcode": "4095555000069",
+      "weight": 680.0,
+      "description_sale": "Zweiteilige Schallschutzhaube mit Wartungstüren, Schalldruckpegel 85 dB(A) in 1 m Abstand."
+    },
+    {
+      "xml_id": "product_fin_eco50",
+      "name": "BHKW enertec ECO 50 (50 kW el. / 90 kW th.)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 89500.0,
+      "standard_price": 52000.0,
+      "default_code": "FIN-ECO-50",
+      "barcode": "4095555000076",
+      "weight": 2100.0,
+      "description_sale": "Kompaktes Blockheizkraftwerk für Mehrfamilienhäuser, Gewerbe und landwirtschaftliche Betriebe, 50 kW elektrisch und 90 kW thermisch."
+    },
+    {
+      "xml_id": "product_fin_eco150",
+      "name": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 189000.0,
+      "standard_price": 118000.0,
+      "default_code": "FIN-ECO-150",
+      "barcode": "4095555000083",
+      "weight": 3800.0,
+      "description_sale": "Blockheizkraftwerk der Mittelklasse für Biogasanlagen, Wärmenetze und Industriebetriebe, 150 kW elektrisch und 220 kW thermisch."
+    },
+    {
+      "xml_id": "product_fin_max250",
+      "name": "BHKW enertec MAX 250 (250 kW el. / 360 kW th.)",
+      "type": "consu",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 268000.0,
+      "standard_price": 164000.0,
+      "default_code": "FIN-MAX-250",
+      "barcode": "4095555000090",
+      "weight": 5400.0,
+      "description_sale": "Großes Blockheizkraftwerk für Contracting und Industriekraftwerke, 250 kW elektrisch und 360 kW thermisch, als Container oder im Technikraum."
+    },
+    {
+      "xml_id": "product_svc_commissioning",
+      "name": "Inbetriebnahme, Einweisung und Abnahme vor Ort",
+      "type": "service",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 4800.0,
+      "default_code": "SVC-IBN",
+      "description_sale": "Montagebegleitung, Erstinbetriebnahme, Einweisung des Betriebspersonals und technische Abnahme vor Ort."
+    },
+    {
+      "xml_id": "product_svc_maintenance",
+      "name": "Wartung und Servicevertrag BHKW (Monatspauschale)",
+      "type": "service",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 950.0,
+      "recurring_invoice": true,
+      "default_code": "SVC-WARTUNG",
+      "description_sale": "Regelmäßige Wartung nach Herstellervorgaben inklusive Verschleißteilen, Ölanalyse und Störungsdienst."
+    },
+    {
+      "xml_id": "product_svc_monitoring",
+      "name": "Fernüberwachung und Monitoring (Monatspauschale)",
+      "type": "service",
+      "sale_ok": true,
+      "purchase_ok": false,
+      "list_price": 190.0,
+      "recurring_invoice": true,
+      "default_code": "SVC-MONITORING",
+      "description_sale": "Permanente Fernüberwachung der Betriebsdaten mit automatischer Störungsmeldung und monatlichem Betriebsbericht."
+    }
+  ],
+  "boms": [
+    {
+      "xml_id": "bom_fin_eco50",
+      "product_xmlid": "product_fin_eco50",
+      "lines": [
+        {"product_xmlid": "product_comp_engine", "qty": 1.0},
+        {"product_xmlid": "product_comp_generator", "qty": 1.0},
+        {"product_xmlid": "product_comp_heat", "qty": 1.0},
+        {"product_xmlid": "product_comp_control", "qty": 1.0},
+        {"product_xmlid": "product_comp_frame", "qty": 1.0},
+        {"product_xmlid": "product_comp_enclosure", "qty": 1.0}
+      ]
+    },
+    {
+      "xml_id": "bom_fin_eco150",
+      "product_xmlid": "product_fin_eco150",
+      "lines": [
+        {"product_xmlid": "product_comp_engine", "qty": 1.0},
+        {"product_xmlid": "product_comp_generator", "qty": 1.0},
+        {"product_xmlid": "product_comp_heat", "qty": 2.0},
+        {"product_xmlid": "product_comp_control", "qty": 1.0},
+        {"product_xmlid": "product_comp_frame", "qty": 1.0},
+        {"product_xmlid": "product_comp_enclosure", "qty": 1.0}
+      ]
+    },
+    {
+      "xml_id": "bom_fin_max250",
+      "product_xmlid": "product_fin_max250",
+      "lines": [
+        {"product_xmlid": "product_comp_engine", "qty": 1.0},
+        {"product_xmlid": "product_comp_generator", "qty": 1.0},
+        {"product_xmlid": "product_comp_heat", "qty": 2.0},
+        {"product_xmlid": "product_comp_control", "qty": 1.0},
+        {"product_xmlid": "product_comp_frame", "qty": 1.0},
+        {"product_xmlid": "product_comp_enclosure", "qty": 1.0}
+      ]
+    }
+  ],
+  "manufacturing_orders": [
+    {
+      "xml_id": "mo_fin_eco50",
+      "product_xmlid": "product_fin_eco50",
+      "bom_xmlid": "bom_fin_eco50",
+      "qty": 2.0
+    },
+    {
+      "xml_id": "mo_fin_eco150",
+      "product_xmlid": "product_fin_eco150",
+      "bom_xmlid": "bom_fin_eco150",
+      "qty": 1.0
+    },
+    {
+      "xml_id": "mo_fin_max250",
+      "product_xmlid": "product_fin_max250",
+      "bom_xmlid": "bom_fin_max250",
+      "qty": 1.0
+    }
+  ],
+  "crm_leads": [
+    {
+      "xml_id": "crm_lead_agrar",
+      "name": "BHKW-Neubau für Biogasanlage (ECO 150)",
+      "type": "opportunity",
+      "partner_xmlid": "partner_customer_agrar",
+      "expected_revenue": 189000.0,
+      "probability": 60.0,
+      "stage_xmlid": "crm.stage_lead2",
+      "priority": "2",
+      "description": "Errichtung eines zweiten BHKW zur Erhöhung des Eigenstromanteils der Biogasanlage, Wärmenutzung im vorhandenen Nahwärmenetz."
+    },
+    {
+      "xml_id": "crm_lead_stadtwerke",
+      "name": "Ersatzinvestition Heizkraftwerk Nordhausen",
+      "type": "opportunity",
+      "partner_xmlid": "partner_customer_stadtwerke",
+      "expected_revenue": 268000.0,
+      "probability": 70.0,
+      "stage_xmlid": "crm.stage_lead3",
+      "priority": "2",
+      "description": "Ersatz einer in die Jahre gekommenen Anlage durch ein BHKW MAX 250 inklusive Anbindung an das bestehende Fernwärmenetz."
+    },
+    {
+      "xml_id": "crm_lead_lebensmittel",
+      "name": "Prozesswärme-Lösung für Lebensmittelproduktion",
+      "type": "opportunity",
+      "partner_xmlid": "partner_customer_lebensmittel",
+      "contact_name": "Katrin Adler",
+      "email_from": "k.adler@example.de",
+      "phone": "+49 3606 555 210",
+      "expected_revenue": 120000.0,
+      "probability": 30.0,
+      "stage_xmlid": "crm.stage_lead1",
+      "priority": "1",
+      "description": "Interessentin für die gekoppelte Strom- und Dampferzeugung zur Senkung der Energiekosten im Produktionsbetrieb."
+    },
+    {
+      "xml_id": "crm_lead_reinhardt",
+      "name": "Repowering bestehendes BHKW Landwirtschaftsbetrieb",
+      "type": "opportunity",
+      "partner_xmlid": "partner_customer_reinhardt",
+      "expected_revenue": 78000.0,
+      "probability": 20.0,
+      "stage_xmlid": "crm.stage_lead1",
+      "description": "Ersatz des vorhandenen Motors und Modernisierung der Steuerung im Rahmen der Repowering-Aktion."
+    }
+  ],
+  "purchase_orders": [
+    {
+      "xml_id": "po_motoren",
+      "partner_xmlid": "partner_supplier_motoren",
+      "state": "sent",
+      "date_order": "2026-08-18 09:00:00",
+      "partner_ref": "MWH-2026-10834",
+      "lines": [
+        {"product_xmlid": "product_comp_engine", "qty": 3.0, "price_unit": 28500.0, "description": "Gas-Ottomotor 150 kW (Erdgas/Biogas)"}
+      ]
+    },
+    {
+      "xml_id": "po_generatoren",
+      "partner_xmlid": "partner_supplier_generatoren",
+      "state": "draft",
+      "date_order": "2026-09-01 10:30:00",
+      "partner_ref": "EGB-2026-5521",
+      "lines": [
+        {"product_xmlid": "product_comp_generator", "qty": 3.0, "price_unit": 12400.0, "description": "Synchrongenerator 200 kVA"},
+        {"product_xmlid": "product_comp_enclosure", "qty": 4.0, "price_unit": 3900.0, "description": "Schallschutzhaube 85 dB(A)"}
+      ]
+    },
+    {
+      "xml_id": "po_komponenten",
+      "partner_xmlid": "partner_supplier_waermetauscher",
+      "state": "draft",
+      "date_order": "2026-09-03 14:00:00",
+      "partner_ref": "WTN-2026-3390",
+      "lines": [
+        {"product_xmlid": "product_comp_heat", "qty": 6.0, "price_unit": 6800.0, "description": "Abgaswärmetauscher 250 kW"},
+        {"product_xmlid": "product_comp_frame", "qty": 3.0, "price_unit": 5200.0, "description": "Grundrahmen Stahlbau (schallgedämmt)"}
+      ]
+    }
+  ],
+  "stock_quants": [
+    {"product_xmlid": "product_comp_engine", "qty": 4.0},
+    {"product_xmlid": "product_comp_generator", "qty": 3.0},
+    {"product_xmlid": "product_comp_heat", "qty": 5.0},
+    {"product_xmlid": "product_comp_control", "qty": 6.0},
+    {"product_xmlid": "product_comp_frame", "qty": 3.0},
+    {"product_xmlid": "product_comp_enclosure", "qty": 3.0},
+    {"product_xmlid": "product_fin_eco50", "qty": 1.0},
+    {"product_xmlid": "product_fin_eco150", "qty": 1.0}
+  ],
+  "invoices": [
+    {
+      "xml_id": "invoice_customer_stadtwerke",
+      "move_type": "out_invoice",
+      "partner_xmlid": "partner_customer_stadtwerke",
+      "invoice_date": "2026-09-06",
+      "ref": "RE-2026-2041",
+      "lines": [
+        {"product_xmlid": "product_fin_eco150", "qty": 1.0, "price_unit": 189000.0, "description": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)"},
+        {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "price_unit": 4800.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"},
+        {"product_xmlid": "product_svc_maintenance", "qty": 12.0, "price_unit": 950.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"}
+      ]
+    },
+    {
+      "xml_id": "invoice_customer_agrar",
+      "move_type": "out_invoice",
+      "partner_xmlid": "partner_customer_agrar",
+      "invoice_date": "2026-09-10",
+      "ref": "RE-2026-2042",
+      "lines": [
+        {"product_xmlid": "product_fin_eco50", "qty": 1.0, "price_unit": 89500.0, "description": "BHKW enertec ECO 50 (50 kW el. / 90 kW th.)"},
+        {"product_xmlid": "product_svc_monitoring", "qty": 12.0, "price_unit": 190.0, "description": "Fernüberwachung und Monitoring (Monatspauschale)"}
+      ]
+    },
+    {
+      "xml_id": "invoice_vendor_motoren",
+      "move_type": "in_invoice",
+      "partner_xmlid": "partner_supplier_motoren",
+      "invoice_date": "2026-08-30",
+      "ref": "MWH-RE-2026-7734",
+      "lines": [
+        {"product_xmlid": "product_comp_engine", "qty": 3.0, "price_unit": 28500.0, "description": "Gas-Ottomotor 150 kW (Erdgas/Biogas)"}
+      ]
+    }
+  ],
+  "helpdesk_tickets": [
+    {
+      "xml_id": "ticket_stadtwerke_stoerung",
+      "name": "Störung BHKW ECO 150: Notabschaltung nach Fehlermeldung 3.4",
+      "partner_xmlid": "partner_customer_stadtwerke",
+      "stage_xmlid": "helpdesk.stage_in_progress",
+      "priority": "3",
+      "description": "Anlage hat am Morgen mit Fehlermeldung 3.4 (Kühlmitteltemperatur) abgeschaltet; Servicetechniker ist auf dem Weg, Anlage läuft vorerst im Handbetrieb."
+    },
+    {
+      "xml_id": "ticket_agrar_monitoring",
+      "name": "Fernüberwachung meldet erhöhten Schmierölverbrauch",
+      "partner_xmlid": "partner_customer_agrar",
+      "stage_xmlid": "helpdesk.stage_new",
+      "priority": "2",
+      "description": "Das Monitoring meldet einen gegenüber dem Referenzwert erhöhten Ölverbrauch; Ursache soll im nächsten Wartungstermin geprüft werden."
+    },
+    {
+      "xml_id": "ticket_lebensmittel_abgas",
+      "name": "Abgaswerte außerhalb des Grenzwerts - Ursachenprüfung",
+      "partner_xmlid": "partner_customer_lebensmittel",
+      "stage_xmlid": "helpdesk.stage_new",
+      "priority": "3",
+      "description": "Bei der wiederkehrenden Abgasmessung wurden erhöhte NOx-Werte festgestellt; Prüfung von Gemischaufbereitung und Lambdasonde."
+    },
+    {
+      "xml_id": "ticket_reinhardt_ersatzteil",
+      "name": "Ersatzteil-Anfrage Zündkerzen und Ölfilter",
+      "partner_xmlid": "partner_customer_reinhardt",
+      "stage_xmlid": "helpdesk.stage_solved",
+      "priority": "1",
+      "description": "Zündkerzensatz und Ölfilter für die turnusmäßige Wartung wurden angefragt, angeboten und versandt."
+    }
+  ],
+  "quotation": {
+    "xml_id": "quotation_lebensmittel",
+    "partner_xmlid": "partner_customer_lebensmittel",
+    "state": "draft",
+    "lines": [
+      {"product_xmlid": "product_fin_eco150", "qty": 1.0, "description": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)"},
+      {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"},
+      {"product_xmlid": "product_svc_maintenance", "qty": 12.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"}
+    ]
+  },
+  "example_orders": [
+    {
+      "xml_id": "sale_order_agrar_1",
+      "partner_xmlid": "partner_customer_agrar",
+      "state": "sent",
+      "date_order": "2026-08-05",
+      "lines": [
+        {"product_xmlid": "product_fin_eco50", "qty": 1.0, "description": "BHKW enertec ECO 50 (50 kW el. / 90 kW th.)"},
+        {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"}
+      ]
+    },
+    {
+      "xml_id": "sale_order_stadtwerke_1",
+      "partner_xmlid": "partner_customer_stadtwerke",
+      "state": "sent",
+      "date_order": "2026-08-11",
+      "lines": [
+        {"product_xmlid": "product_fin_eco150", "qty": 1.0, "description": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)"},
+        {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"}
+      ]
+    }
+  ],
+  "quotation_templates": [
+    {
+      "xml_id": "quote_template_eco50",
+      "name": "BHKW-Komplettpaket ECO 50 (schlüsselfertig)",
+      "number_of_days": 45,
+      "note": "Schlüsselfertige Lieferung inklusive Planung, Montage und Inbetriebnahme. Alle Preise zzgl. gesetzlicher MwSt. Lieferzeit nach Auftragsbestätigung ca. 6 Monate.",
+      "lines": [
+        {"product_xmlid": "product_fin_eco50", "qty": 1.0, "description": "BHKW enertec ECO 50 (50 kW el. / 90 kW th.)"},
+        {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"},
+        {"product_xmlid": "product_svc_maintenance", "qty": 12.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"}
+      ]
+    },
+    {
+      "xml_id": "quote_template_eco150",
+      "name": "BHKW-Komplettpaket ECO 150 (schlüsselfertig)",
+      "number_of_days": 60,
+      "note": "Schlüsselfertige Lieferung inklusive Planung, Montage, Inbetriebnahme und Anbindung an das vorhandene Wärmenetz. Alle Preise zzgl. gesetzlicher MwSt.",
+      "lines": [
+        {"product_xmlid": "product_fin_eco150", "qty": 1.0, "description": "BHKW enertec ECO 150 (150 kW el. / 220 kW th.)"},
+        {"product_xmlid": "product_svc_commissioning", "qty": 1.0, "description": "Inbetriebnahme, Einweisung und Abnahme vor Ort"},
+        {"product_xmlid": "product_svc_maintenance", "qty": 12.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"}
+      ]
+    },
+    {
+      "xml_id": "quote_template_service",
+      "name": "Wartungs- und Monitoring-Paket",
+      "number_of_days": 30,
+      "note": "Monatlich kündbar zum Monatsende. Enthält die Wartung nach Herstellervorgaben sowie die permanente Fernüberwachung inklusive monatlichem Betriebsbericht.",
+      "lines": [
+        {"product_xmlid": "product_svc_maintenance", "qty": 12.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"},
+        {"product_xmlid": "product_svc_monitoring", "qty": 12.0, "description": "Fernüberwachung und Monitoring (Monatspauschale)"}
+      ]
+    }
+  ],
+  "project_task_stages": [
+    {"xml_id": "task_stage_planung", "name": "Konstruktion & Planung", "sequence": 1},
+    {"xml_id": "task_stage_fertigung", "name": "Fertigung", "sequence": 10},
+    {"xml_id": "task_stage_montage", "name": "Montage vor Ort", "sequence": 20},
+    {"xml_id": "task_stage_ibn", "name": "Inbetriebnahme", "sequence": 30},
+    {"xml_id": "task_stage_done", "name": "Abnahme & Abschluss", "sequence": 40, "fold": true}
+  ],
+  "projects": [
+    {
+      "xml_id": "project_stadtwerke_eco150",
+      "name": "BHKW-Projekt Stadtwerke Nordhausen (ECO 150)",
+      "partner_xmlid": "partner_customer_stadtwerke",
+      "stage_xmlid": "project.project_project_stage_1",
+      "date_start": "2026-08-01",
+      "date_end": "2026-12-18",
+      "privacy_visibility": "portal",
+      "description": "Schlüsselfertige Errichtung eines BHKW ECO 150 inklusive Planung, Fertigung, Montage, Inbetriebnahme und Anbindung an das Fernwärmenetz."
+    },
+    {
+      "xml_id": "project_agrar_eco50",
+      "name": "BHKW-Projekt Agrar-Energie Mühlhausen (ECO 50)",
+      "partner_xmlid": "partner_customer_agrar",
+      "stage_xmlid": "project.project_project_stage_1",
+      "date_start": "2026-08-05",
+      "date_end": "2026-11-20",
+      "privacy_visibility": "portal",
+      "description": "Errichtung eines BHKW ECO 50 zur Eigenstromversorgung der Biogasanlage inklusive Einbindung in das vorhandene Nahwärmenetz."
+    },
+    {
+      "xml_id": "project_field_service",
+      "name": "Kundendienst-Einsätze (Field Service)",
+      "is_fsm": true,
+      "privacy_visibility": "employees",
+      "description": "Planung und Abwicklung der Vor-Ort-Einsätze von Inbetriebnahme, Wartung und Störungsdienst durch die Servicetechniker."
+    }
+  ],
+  "project_tasks": [
+    {"xml_id": "task_stadtwerke_engineering", "name": "Auslegung und Genehmigungsplanung", "project_xmlid": "project_stadtwerke_eco150", "stage_xmlid": "task_stage_planung", "priority": "1", "allocated_hours": 40.0},
+    {"xml_id": "task_stadtwerke_fertigung", "name": "Fertigung und Vormontage im Werk", "project_xmlid": "project_stadtwerke_eco150", "stage_xmlid": "task_stage_fertigung", "priority": "1", "allocated_hours": 120.0, "date_deadline": "2026-10-31 17:00:00"},
+    {"xml_id": "task_stadtwerke_montage", "name": "Montage und Anschluss Wärmenetz", "project_xmlid": "project_stadtwerke_eco150", "stage_xmlid": "task_stage_montage", "priority": "2", "allocated_hours": 80.0},
+    {"xml_id": "task_stadtwerke_ibn", "name": "Inbetriebnahme und Einweisung", "project_xmlid": "project_stadtwerke_eco150", "stage_xmlid": "task_stage_ibn", "priority": "1", "allocated_hours": 24.0},
+    {"xml_id": "task_agrar_konstruktion", "name": "Konstruktion Aufstellungsplan", "project_xmlid": "project_agrar_eco50", "stage_xmlid": "task_stage_planung", "priority": "1", "allocated_hours": 24.0},
+    {"xml_id": "task_agrar_fertigung", "name": "Fertigung BHKW ECO 50", "project_xmlid": "project_agrar_eco50", "stage_xmlid": "task_stage_fertigung", "priority": "1", "allocated_hours": 90.0},
+    {"xml_id": "task_agrar_ibn", "name": "Inbetriebnahme und Abnahme", "project_xmlid": "project_agrar_eco50", "stage_xmlid": "task_stage_ibn", "priority": "2", "allocated_hours": 16.0},
+    {"xml_id": "task_agrar_doku", "name": "Übergabe der Anlagendokumentation", "project_xmlid": "project_agrar_eco50", "stage_xmlid": "task_stage_done", "priority": "0", "allocated_hours": 8.0},
+    {"xml_id": "fsm_task_stadtwerke_stoerung", "name": "Störungseinsatz BHKW ECO 150 Stadtwerke Nordhausen", "project_xmlid": "project_field_service", "partner_xmlid": "partner_customer_stadtwerke", "priority": "3", "date_deadline": "2026-09-14 12:00:00", "description": "Notabschaltung nach Fehlermeldung 3.4; Kühlmittelkreislauf prüfen und Anlage wieder in Betrieb nehmen."},
+    {"xml_id": "fsm_task_agrar_wartung", "name": "Wartungseinsatz BHKW ECO 50 Agrar-Energie", "project_xmlid": "project_field_service", "partner_xmlid": "partner_customer_agrar", "priority": "2", "date_deadline": "2026-09-22 16:00:00", "description": "Wartung nach 2.000 Betriebsstunden inklusive Ölwechsel, Filterwechsel und Ölanalyse."},
+    {"xml_id": "fsm_task_lebensmittel_abgas", "name": "Abgasmessung Lebensmittelwerk Eichsfeld", "project_xmlid": "project_field_service", "partner_xmlid": "partner_customer_lebensmittel", "priority": "1", "date_deadline": "2026-09-25 10:00:00", "description": "Wiederkehrende Abgasmessung durchführen und Messprotokoll für die Behörde erstellen."}
+  ],
+  "maintenance_equipment_categories": [
+    {"xml_id": "maint_cat_bhkw", "name": "Blockheizkraftwerke", "note": "Ausgelieferte und beim Kunden installierte BHKW-Anlagen."},
+    {"xml_id": "maint_cat_peripherie", "name": "BHKW-Peripherie", "note": "Wärmetauscher, Steuerungen und weiteres Zubehör."}
+  ],
+  "maintenance_equipment": [
+    {
+      "xml_id": "equip_bhkw_stadtwerke",
+      "name": "BHKW ECO 150 – Stadtwerke Nordhausen",
+      "category_xmlid": "maint_cat_bhkw",
+      "partner_xmlid": "partner_customer_stadtwerke",
+      "serial_no": "ET-ECO150-2026-0041",
+      "model": "ECO 150",
+      "assign_date": "2026-09-15",
+      "warranty_date": "2029-09-14",
+      "cost": 189000.0,
+      "note": "Netzgekoppelte Anlage im Heizkraftwerk Nordhausen, Wärmenutzung im Fernwärmenetz."
+    },
+    {
+      "xml_id": "equip_bhkw_agrar",
+      "name": "BHKW ECO 50 – Agrar-Energie Mühlhausen",
+      "category_xmlid": "maint_cat_bhkw",
+      "partner_xmlid": "partner_customer_agrar",
+      "serial_no": "ET-ECO50-2026-0042",
+      "model": "ECO 50",
+      "assign_date": "2026-08-20",
+      "warranty_date": "2029-08-19",
+      "cost": 89500.0,
+      "note": "Anlage zur Eigenstromversorgung der Biogasanlage, Einbindung in das Nahwärmenetz."
+    },
+    {
+      "xml_id": "equip_bhkw_lebensmittel",
+      "name": "BHKW ECO 150 – Lebensmittelwerk Eichsfeld",
+      "category_xmlid": "maint_cat_bhkw",
+      "partner_xmlid": "partner_customer_lebensmittel",
+      "serial_no": "ET-ECO150-2026-0043",
+      "model": "ECO 150",
+      "assign_date": "2026-07-01",
+      "warranty_date": "2029-06-30",
+      "cost": 189000.0,
+      "note": "Anlage zur gekoppelten Strom- und Dampferzeugung im Produktionsbetrieb."
+    },
+    {
+      "xml_id": "equip_waermetauscher_werk",
+      "name": "Abgaswärmetauscher Prüfstand (Werk Mühlhausen)",
+      "category_xmlid": "maint_cat_peripherie",
+      "serial_no": "ET-WT-PRUEF-01",
+      "model": "WT 250",
+      "assign_date": "2025-03-10",
+      "cost": 6800.0,
+      "note": "Prüfstand für Wareneingangs- und Dichtheitsprüfungen im Werk."
+    }
+  ],
+  "maintenance_requests": [
+    {
+      "xml_id": "maint_req_stadtwerke_stoerung",
+      "name": "Störung Kühlmitteltemperatur (Fehler 3.4)",
+      "equipment_xmlid": "equip_bhkw_stadtwerke",
+      "maintenance_type": "corrective",
+      "stage_xmlid": "maintenance.stage_1",
+      "priority": "3",
+      "request_date": "2026-09-13",
+      "schedule_date": "2026-09-14 08:00:00",
+      "description": "Anlage hat mit Fehlermeldung 3.4 abgeschaltet; Kühlmittelkreislauf und Temperatursensor werden durch den Servicetechniker geprüft."
+    },
+    {
+      "xml_id": "maint_req_agrar_wartung",
+      "name": "Wartung nach 2.000 Betriebsstunden",
+      "equipment_xmlid": "equip_bhkw_agrar",
+      "maintenance_type": "preventive",
+      "stage_xmlid": "maintenance.stage_0",
+      "priority": "2",
+      "request_date": "2026-09-10",
+      "schedule_date": "2026-09-22 09:00:00",
+      "description": "Turnusmäßige Wartung inklusive Ölwechsel, Filterwechsel und Ölanalyse."
+    },
+    {
+      "xml_id": "maint_req_lebensmittel_oelwechsel",
+      "name": "Ölwechsel und Ölanalyse",
+      "equipment_xmlid": "equip_bhkw_lebensmittel",
+      "maintenance_type": "preventive",
+      "stage_xmlid": "maintenance.stage_3",
+      "priority": "1",
+      "request_date": "2026-09-08",
+      "close_date": "2026-09-12",
+      "description": "Ölwechsel durchgeführt und Ölprobe zur Analyse an das Labor gesandt."
+    },
+    {
+      "xml_id": "maint_req_werk_pruefstand",
+      "name": "Kalibrierung Prüfstand",
+      "equipment_xmlid": "equip_waermetauscher_werk",
+      "maintenance_type": "preventive",
+      "stage_xmlid": "maintenance.stage_3",
+      "priority": "0",
+      "request_date": "2026-08-25",
+      "close_date": "2026-08-29",
+      "description": "Jährliche Kalibrierung der Druck- und Temperaturmesstechnik am Prüfstand."
+    }
+  ],
+  "quality_points": [
+    {
+      "xml_id": "qp_final_inspection",
+      "name": "QCP-001 Endkontrolle BHKW",
+      "title": "Sicht- und Funktionsprüfung der fertigen Anlage",
+      "product_xmlids": ["product_fin_eco50", "product_fin_eco150", "product_fin_max250"],
+      "test_type": "passfail",
+      "measure_on": "product",
+      "note": "Endkontrolle vor Auslieferung gemäß DIN EN ISO 9001: Vollständigkeit, Verkabelung und Funktion der Steuerung."
+    },
+    {
+      "xml_id": "qp_leak_test",
+      "name": "QCP-002 Dichtheitsprüfung Gasstrecke",
+      "title": "Dichtheitsprüfung der Gasstrecke nach DVGW",
+      "product_xmlids": ["product_fin_eco50", "product_fin_eco150", "product_fin_max250"],
+      "test_type": "passfail",
+      "measure_on": "product",
+      "note": "Dichtheitsprüfung der Gasregelstrecke mit Prüfprotokoll vor der Auslieferung."
+    },
+    {
+      "xml_id": "qp_electrical_safety",
+      "name": "QCP-003 Elektrische Sicherheitsprüfung (DGUV V3)",
+      "title": "Schutzleiter-, Isolations- und RCD-Prüfung",
+      "product_xmlids": ["product_fin_eco50", "product_fin_eco150", "product_fin_max250"],
+      "test_type": "passfail",
+      "measure_on": "product",
+      "note": "Wiederkehrende Prüfung elektrischer Betriebsmittel nach DGUV Vorschrift 3."
+    }
+  ],
+  "quality_checks": [
+    {
+      "xml_id": "qc_eco150_final",
+      "point_xmlid": "qp_final_inspection",
+      "production_xmlid": "mo_fin_eco150",
+      "product_xmlid": "product_fin_eco150",
+      "quality_state": "pass",
+      "note": "Endkontrolle bestanden; Anlage freigegeben."
+    },
+    {
+      "xml_id": "qc_max250_leak",
+      "point_xmlid": "qp_leak_test",
+      "production_xmlid": "mo_fin_max250",
+      "product_xmlid": "product_fin_max250",
+      "quality_state": "none"
+    },
+    {
+      "xml_id": "qc_eco50_electrical",
+      "point_xmlid": "qp_electrical_safety",
+      "production_xmlid": "mo_fin_eco50",
+      "product_xmlid": "product_fin_eco50",
+      "quality_state": "none"
+    }
+  ],
+  "quality_alerts": [
+    {
+      "xml_id": "qa_stadtwerke_oil",
+      "name": "Erhöhter Schmierölverbrauch ECO 150",
+      "product_xmlid": "product_fin_eco150",
+      "partner_xmlid": "partner_customer_stadtwerke",
+      "production_xmlid": "mo_fin_eco150",
+      "priority": "2",
+      "description": "Die Fernüberwachung meldet einen erhöhten Schmierölverbrauch; Ursache wird im Rahmen der Qualitätsprüfung analysiert."
+    },
+    {
+      "xml_id": "qa_agrar_nox",
+      "name": "NOx-Wert außerhalb der Toleranz",
+      "product_xmlid": "product_fin_eco50",
+      "partner_xmlid": "partner_customer_agrar",
+      "priority": "3",
+      "description": "Bei der Abgasmessung wurde ein NOx-Wert oberhalb des Grenzwerts festgestellt; Gemischaufbereitung und Lambdasonde werden geprüft."
+    }
+  ],
+  "subscriptions": [
+    {
+      "xml_id": "sub_stadtwerke_service",
+      "partner_xmlid": "partner_customer_stadtwerke",
+      "plan": "month",
+      "state": "draft",
+      "lines": [
+        {"product_xmlid": "product_svc_maintenance", "qty": 1.0, "description": "Wartung und Servicevertrag BHKW (Monatspauschale)"},
+        {"product_xmlid": "product_svc_monitoring", "qty": 1.0, "description": "Fernüberwachung und Monitoring (Monatspauschale)"}
+      ]
+    },
+    {
+      "xml_id": "sub_agrar_monitoring",
+      "partner_xmlid": "partner_customer_agrar",
+      "plan": "month",
+      "state": "draft",
+      "lines": [
+        {"product_xmlid": "product_svc_monitoring", "qty": 1.0, "description": "Fernüberwachung und Monitoring (Monatspauschale)"}
+      ]
+    },
+    {
+      "xml_id": "sub_lebensmittel_wartung",
+      "partner_xmlid": "partner_customer_lebensmittel",
+      "plan": "year",
+      "state": "draft",
+      "lines": [
+        {"product_xmlid": "product_svc_maintenance", "qty": 1.0, "description": "Wartung und Servicevertrag BHKW (Jahrespauschale)"}
+      ]
+    }
+  ]
+}

@@ -18,6 +18,9 @@ from .model import (
     HelpdeskTicket,
     Invoice,
     InvoiceLine,
+    MaintenanceEquipment,
+    MaintenanceEquipmentCategory,
+    MaintenanceRequest,
     ManufacturingOrder,
     Module,
     Partner,
@@ -27,12 +30,17 @@ from .model import (
     ProjectTaskStage,
     PurchaseOrder,
     PurchaseOrderLine,
+    QualityAlert,
+    QualityCheck,
+    QualityPoint,
     QuotationTemplate,
     QuotationTemplateLine,
     SaleOrder,
     SaleOrderLine,
     SpecError,
     StockQuant,
+    Subscription,
+    SubscriptionLine,
 )
 
 
@@ -124,6 +132,7 @@ def load_product(d: dict[str, Any]) -> Product:
         weight=_get(d, "weight", where, default=None),
         volume=_get(d, "volume", where, default=None),
         description_sale=_get(d, "description_sale", where, default=None),
+        recurring_invoice=_get(d, "recurring_invoice", where, default=None),
     )
 
 
@@ -324,6 +333,7 @@ def load_project(d: dict[str, Any]) -> Project:
         date_start=_get(d, "date_start", where, default=None),
         date_end=_get(d, "date_end", where, default=None),
         privacy_visibility=_get(d, "privacy_visibility", where, default=None),
+        is_fsm=_get(d, "is_fsm", where, default=False),
     )
 
 
@@ -341,6 +351,121 @@ def load_project_task(d: dict[str, Any]) -> ProjectTask:
         priority=_get(d, "priority", where, default=None),
         date_deadline=_get(d, "date_deadline", where, default=None),
         allocated_hours=_get(d, "allocated_hours", where, default=None),
+    )
+
+
+def load_maintenance_equipment_category(d: dict[str, Any]) -> MaintenanceEquipmentCategory:
+    xml_id = _get(d, "xml_id", "maintenance_equipment_category", required=True)
+    where = f"maintenance_equipment_category {xml_id}"
+    _reject_unknown(d, MaintenanceEquipmentCategory, where)
+    return MaintenanceEquipmentCategory(
+        xml_id=xml_id,
+        name=_get(d, "name", where, required=True),
+        note=_get(d, "note", where, default=None),
+    )
+
+
+def load_maintenance_equipment(d: dict[str, Any]) -> MaintenanceEquipment:
+    xml_id = _get(d, "xml_id", "maintenance_equipment", required=True)
+    where = f"maintenance_equipment {xml_id}"
+    _reject_unknown(d, MaintenanceEquipment, where)
+    return MaintenanceEquipment(
+        xml_id=xml_id,
+        name=_get(d, "name", where, required=True),
+        category_xmlid=_get(d, "category_xmlid", where, default=None),
+        partner_xmlid=_get(d, "partner_xmlid", where, default=None),
+        serial_no=_get(d, "serial_no", where, default=None),
+        model=_get(d, "model", where, default=None),
+        assign_date=_get(d, "assign_date", where, default=None),
+        warranty_date=_get(d, "warranty_date", where, default=None),
+        cost=_get(d, "cost", where, default=None),
+        note=_get(d, "note", where, default=None),
+    )
+
+
+def load_maintenance_request(d: dict[str, Any]) -> MaintenanceRequest:
+    xml_id = _get(d, "xml_id", "maintenance_request", required=True)
+    where = f"maintenance_request {xml_id}"
+    _reject_unknown(d, MaintenanceRequest, where)
+    return MaintenanceRequest(
+        xml_id=xml_id,
+        name=_get(d, "name", where, required=True),
+        equipment_xmlid=_get(d, "equipment_xmlid", where, default=None),
+        maintenance_type=_get(d, "maintenance_type", where, default="corrective"),
+        stage_xmlid=_get(d, "stage_xmlid", where, default="maintenance.stage_0"),
+        priority=_get(d, "priority", where, default=None),
+        description=_get(d, "description", where, default=None),
+        request_date=_get(d, "request_date", where, default=None),
+        schedule_date=_get(d, "schedule_date", where, default=None),
+        close_date=_get(d, "close_date", where, default=None),
+    )
+
+
+def load_quality_point(d: dict[str, Any]) -> QualityPoint:
+    xml_id = _get(d, "xml_id", "quality_point", required=True)
+    where = f"quality_point {xml_id}"
+    _reject_unknown(d, QualityPoint, where)
+    return QualityPoint(
+        xml_id=xml_id,
+        name=_get(d, "name", where, required=True),
+        title=_get(d, "title", where, default=None),
+        product_xmlids=_get(d, "product_xmlids", where, default=[]),
+        test_type=_get(d, "test_type", where, default="passfail"),
+        measure_on=_get(d, "measure_on", where, default="product"),
+        note=_get(d, "note", where, default=None),
+    )
+
+
+def load_quality_check(d: dict[str, Any]) -> QualityCheck:
+    xml_id = _get(d, "xml_id", "quality_check", required=True)
+    where = f"quality_check {xml_id}"
+    _reject_unknown(d, QualityCheck, where)
+    return QualityCheck(
+        xml_id=xml_id,
+        point_xmlid=_get(d, "point_xmlid", where, required=True),
+        production_xmlid=_get(d, "production_xmlid", where, default=None),
+        product_xmlid=_get(d, "product_xmlid", where, default=None),
+        quality_state=_get(d, "quality_state", where, default="none"),
+        note=_get(d, "note", where, default=None),
+    )
+
+
+def load_quality_alert(d: dict[str, Any]) -> QualityAlert:
+    xml_id = _get(d, "xml_id", "quality_alert", required=True)
+    where = f"quality_alert {xml_id}"
+    _reject_unknown(d, QualityAlert, where)
+    return QualityAlert(
+        xml_id=xml_id,
+        name=_get(d, "name", where, required=True),
+        product_xmlid=_get(d, "product_xmlid", where, default=None),
+        partner_xmlid=_get(d, "partner_xmlid", where, default=None),
+        production_xmlid=_get(d, "production_xmlid", where, default=None),
+        stage_xmlid=_get(d, "stage_xmlid", where, default="quality.quality_alert_stage_0"),
+        priority=_get(d, "priority", where, default=None),
+        description=_get(d, "description", where, default=None),
+    )
+
+
+def load_subscription(d: dict[str, Any]) -> Subscription:
+    xml_id = _get(d, "xml_id", "subscription", required=True)
+    where = f"subscription {xml_id}"
+    _reject_unknown(d, Subscription, where)
+    lines_raw = _get(d, "lines", where, required=True)
+    lines = [
+        SubscriptionLine(
+            product_xmlid=_get(ld, "product_xmlid", f"{where} line", required=True),
+            qty=_get(ld, "qty", f"{where} line", default=1.0),
+            description=_get(ld, "description", f"{where} line", default=None),
+        )
+        for ld in [_checked(x, SubscriptionLine, f"{where} line") for x in lines_raw]
+    ]
+    return Subscription(
+        xml_id=xml_id,
+        partner_xmlid=_get(d, "partner_xmlid", where, required=True),
+        plan=_get(d, "plan", where, default="month"),
+        state=_get(d, "state", where, default="draft"),
+        start_date=_get(d, "start_date", where, default=None),
+        lines=lines,
     )
 
 
@@ -369,6 +494,16 @@ def load_spec(d: dict[str, Any]) -> CustomerSpec:
         projects=[load_project(x) for x in d.get("projects", [])],
         project_task_stages=[load_project_stage(x) for x in d.get("project_task_stages", [])],
         project_tasks=[load_project_task(x) for x in d.get("project_tasks", [])],
+        maintenance_equipment_categories=[
+            load_maintenance_equipment_category(x)
+            for x in d.get("maintenance_equipment_categories", [])
+        ],
+        maintenance_equipment=[load_maintenance_equipment(x) for x in d.get("maintenance_equipment", [])],
+        maintenance_requests=[load_maintenance_request(x) for x in d.get("maintenance_requests", [])],
+        quality_points=[load_quality_point(x) for x in d.get("quality_points", [])],
+        quality_checks=[load_quality_check(x) for x in d.get("quality_checks", [])],
+        quality_alerts=[load_quality_alert(x) for x in d.get("quality_alerts", [])],
+        subscriptions=[load_subscription(x) for x in d.get("subscriptions", [])],
         language=_get(d, "language", "spec", default=None),
         crm_team_name=_get(d, "crm_team_name", "spec", default=None),
         helpdesk_team_name=_get(d, "helpdesk_team_name", "spec", default=None),

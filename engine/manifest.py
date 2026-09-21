@@ -41,6 +41,16 @@ def data_files(spec: CustomerSpec) -> list[str]:
         files.append("data/helpdesk_team_data.xml")
     if spec.partners:
         files.append("data/res_partner_data.xml")
+    # Maintenance: the demo team must exist before equipment/requests
+    # (maintenance.request.maintenance_team_id is required; check_company).
+    if spec.needs_maintenance:
+        files.append("data/maintenance_team_data.xml")
+    if spec.maintenance_equipment_categories:
+        files.append("data/maintenance_equipment_category_data.xml")
+    if spec.maintenance_equipment:
+        files.append("data/maintenance_equipment_data.xml")
+    if spec.maintenance_requests:
+        files.append("data/maintenance_request_data.xml")
     # Task stages MUST exist before the projects that link them (type_ids).
     if spec.project_task_stages:
         files.append("data/project_task_stage_data.xml")
@@ -62,6 +72,14 @@ def data_files(spec: CustomerSpec) -> list[str]:
         files.append("data/stock_quant_data.xml")
     if spec.manufacturing_orders:
         files.append("data/mrp_production_data.xml")
+    # Quality points need products + the warehouse manufacturing operation type;
+    # checks/alerts additionally reference the manufacturing orders above.
+    if spec.quality_points:
+        files.append("data/quality_point_data.xml")
+    if spec.quality_checks:
+        files.append("data/quality_check_data.xml")
+    if spec.quality_alerts:
+        files.append("data/quality_alert_data.xml")
     if spec.invoices:
         files.append("data/account_move_data.xml")
     if spec.helpdesk_tickets:
@@ -72,6 +90,8 @@ def data_files(spec: CustomerSpec) -> list[str]:
         files.append("data/sale_order_quotation_data.xml")
     if spec.example_orders:
         files.append("data/sale_order_examples_data.xml")
+    if spec.subscriptions:
+        files.append("data/sale_order_subscription_data.xml")
     return files
 
 
@@ -107,6 +127,19 @@ def depends(spec: CustomerSpec) -> list[str]:
         deps.append("helpdesk")
     if spec.needs_project:
         deps.append("project")
+    if spec.needs_field_service:
+        # Field Service (Enterprise): marks projects as is_fsm. Requires project.
+        deps.append("industry_fsm")
+    if spec.needs_maintenance:
+        # Community app; also pulls the stock_maintenance bridge when stock is
+        # installed.
+        deps.append("maintenance")
+    if spec.needs_quality:
+        # Quality app (Enterprise). quality_mrp auto-installs with mrp.
+        deps.append("quality_control")
+    if spec.needs_subscriptions:
+        # Subscriptions (Enterprise): sale.order with plan_id.
+        deps.append("sale_subscription")
     return deps
 
 

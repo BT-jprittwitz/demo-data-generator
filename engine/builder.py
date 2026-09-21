@@ -29,6 +29,22 @@ def write_module_dir(spec: CustomerSpec, out_dir: Path) -> Path:
         (data_dir / "helpdesk_team_data.xml").write_text(records.render_helpdesk_team_xml(spec), encoding="utf-8")
     if spec.partners:
         (data_dir / "res_partner_data.xml").write_text(records.render_res_partner_xml(spec), encoding="utf-8")
+    if spec.needs_maintenance:
+        (data_dir / "maintenance_team_data.xml").write_text(
+            records.render_maintenance_team_xml(spec), encoding="utf-8"
+        )
+    if spec.maintenance_equipment_categories:
+        (data_dir / "maintenance_equipment_category_data.xml").write_text(
+            records.render_maintenance_equipment_category_xml(spec), encoding="utf-8"
+        )
+    if spec.maintenance_equipment:
+        (data_dir / "maintenance_equipment_data.xml").write_text(
+            records.render_maintenance_equipment_xml(spec), encoding="utf-8"
+        )
+    if spec.maintenance_requests:
+        (data_dir / "maintenance_request_data.xml").write_text(
+            records.render_maintenance_request_xml(spec), encoding="utf-8"
+        )
     # Task stages MUST exist before the projects that link them (type_ids).
     if spec.project_task_stages:
         (data_dir / "project_task_stage_data.xml").write_text(
@@ -57,6 +73,18 @@ def write_module_dir(spec: CustomerSpec, out_dir: Path) -> Path:
         (data_dir / "stock_quant_data.xml").write_text(records.render_stock_quant_xml(spec), encoding="utf-8")
     if spec.manufacturing_orders:
         (data_dir / "mrp_production_data.xml").write_text(records.render_mrp_production_xml(spec), encoding="utf-8")
+    if spec.quality_points:
+        (data_dir / "quality_point_data.xml").write_text(
+            records.render_quality_point_xml(spec), encoding="utf-8"
+        )
+    if spec.quality_checks:
+        (data_dir / "quality_check_data.xml").write_text(
+            records.render_quality_check_xml(spec), encoding="utf-8"
+        )
+    if spec.quality_alerts:
+        (data_dir / "quality_alert_data.xml").write_text(
+            records.render_quality_alert_xml(spec), encoding="utf-8"
+        )
     if spec.invoices:
         (data_dir / "account_move_data.xml").write_text(records.render_account_move_xml(spec), encoding="utf-8")
     if spec.helpdesk_tickets:
@@ -72,6 +100,10 @@ def write_module_dir(spec: CustomerSpec, out_dir: Path) -> Path:
     if spec.example_orders:
         (data_dir / "sale_order_examples_data.xml").write_text(
             records.render_sale_order_examples_xml(spec), encoding="utf-8"
+        )
+    if spec.subscriptions:
+        (data_dir / "sale_order_subscription_data.xml").write_text(
+            records.render_subscription_xml(spec), encoding="utf-8"
         )
     return module_dir
 

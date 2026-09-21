@@ -32,7 +32,14 @@ Foreign xmlids (e.g. `base.ch`, `crm.stage_lead1`) are emitted 1:1 as `ref`.
   "example_orders": [ ... ],      // example sales orders
   "projects": [ ... ],            // project.project
   "project_task_stages": [ ... ], // project.task.type (task stages)
-  "project_tasks": [ ... ]        // project.task
+  "project_tasks": [ ... ],       // project.task
+  "maintenance_equipment_categories": [ ... ], // maintenance.equipment.category
+  "maintenance_equipment": [ ... ],            // maintenance.equipment
+  "maintenance_requests": [ ... ],             // maintenance.request
+  "quality_points": [ ... ],      // quality.point
+  "quality_checks": [ ... ],      // quality.check
+  "quality_alerts": [ ... ],      // quality.alert
+  "subscriptions": [ ... ]        // sale.order with plan_id
 }
 ```
 
@@ -76,6 +83,7 @@ Without `chart_template` no chart of accounts is loaded; invoices need it.
 | `standard_price` | no | Cost price (company_dependent -> context automatic). |
 | `is_storable` | no | Default: `type == "consu"`. |
 | `default_code`, `barcode`, `weight`, `volume`, `description_sale` | no | Barcodes must be unique. |
+| `recurring_invoice` | no | Marks a subscription product (`sale_subscription` only, verified-patterns 4.25). Requires the `subscriptions` bundle; a recurring product on a non-draft sale order is rejected. |
 
 ## `boms[]` (manufacturing customer)
 
@@ -143,7 +151,9 @@ The products must be `sale_ok` and belong to the demo company.
 `projects`: `xml_id`, `name` (required); optional `partner_xmlid` (customer),
 `stage_xmlid` (a `project.project.stage`, e.g.
 `project.project_project_stage_1`), `description`, `date_start`, `date_end`,
-`privacy_visibility` (`followers` | `invited_users` | `employees` | `portal`).
+`privacy_visibility` (`followers` | `invited_users` | `employees` | `portal`),
+`is_fsm` (bool, default `false` - Field Service project, bundle `field_service`,
+verified-patterns 4.26; its task stages are assigned by `industry_fsm`).
 
 `project_task_stages`: `xml_id`, `name` (required); optional `sequence`
 (default 10), `fold`. Task stages must be declared together with at least one
@@ -158,6 +168,53 @@ Own bundle `project` (app `project`, requires `contacts`); creates the data
 files `project_task_stage_data.xml`, `project_project_data.xml`,
 `project_task_data.xml` in that order. See verified-patterns 4.21.
 
+## `maintenance_equipment_categories[]`, `maintenance_equipment[]`,
+`maintenance_requests[]` (bundle `maintenance`, Community)
+
+`maintenance_equipment_categories`: `xml_id`, `name` (required); optional `note`.
+
+`maintenance_equipment`: `xml_id`, `name` (required); optional `category_xmlid`,
+`partner_xmlid` (vendor), `serial_no` (unique), `model`, `assign_date`,
+`warranty_date`, `cost`, `note`.
+
+`maintenance_requests`: `xml_id`, `name` (required); optional `equipment_xmlid`,
+`maintenance_type` (`corrective` | `preventive`, default `corrective`),
+`stage_xmlid` (default `maintenance.stage_0`), `priority` (`0`..`3`),
+`description`, `request_date`, `schedule_date`, `close_date`.
+
+The generator creates one `maintenance.team` per demo company
+(`data/maintenance_team_data.xml`, always when the bundle is used) because a
+request's team is required. See verified-patterns 4.22.
+
+## `quality_points[]`, `quality_checks[]`, `quality_alerts[]` (bundle `quality`,
+Enterprise, requires `mrp`)
+
+`quality_points`: `xml_id`, `name` (required); optional `title`,
+`product_xmlids` (list of local product xmlids; empty = all), `test_type`
+(`passfail` | `measure`, default `passfail`), `measure_on` (`product` |
+`operation`, default `product`), `note`. The generator sets the warehouse
+manufacturing operation type as `picking_type_ids` and the shipped global team
+`quality.quality_alert_team0`.
+
+`quality_checks`: `xml_id`, `point_xmlid` (required), optional
+`production_xmlid` (a `manufacturing_orders` xmlid), `product_xmlid` (must be
+the production's finished product), `quality_state` (`none` | `pass` | `fail`,
+default `none`), `note`.
+
+`quality_alerts`: `xml_id`, `name` (required); optional `product_xmlid`,
+`partner_xmlid`, `production_xmlid`, `stage_xmlid` (default
+`quality.quality_alert_stage_0`), `priority` (`0`..`3`), `description`.
+
+See verified-patterns 4.23/4.24.
+
+## `subscriptions[]` (bundle `subscriptions`, Enterprise)
+
+`xml_id`, `partner_xmlid`, `lines[]` (required); `plan` (`month` | `year`,
+default `month`), `state` (default `draft`; only draft/sent), optional
+`start_date`. Line: `product_xmlid`, `qty` (default 1.0), `description`.
+Products should set `recurring_invoice: true` so the lines become recurring.
+See verified-patterns 4.25.
+
 ## What static validation rejects
 
 `engine/validate.py` + `engine/model.py` enforce among other things: unknown
@@ -166,4 +223,6 @@ files `project_task_stage_data.xml`, `project_project_data.xml`,
 `inventory_quantity`, `standard_price` without company context, duplicate
 barcodes, a `project.task` whose stage is not linked via `project.type_ids`,
 `project.task` without `project.project`, dangling `xml_id` references, missing
-manifest files.
+manifest files, `quality_points` without `mrp`, invalid maintenance/quality/
+subscription enum values, `recurring_invoice` without a `sale_subscription`
+dependency, and a recurring product on a non-draft `sale.order`/quotation.

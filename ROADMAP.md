@@ -12,6 +12,17 @@ Principles:
   building blocks (the sections in `engine/model.py`). Reusable "profiles" exist
   only as these building blocks, never as industry presets.
 
+## Version / branch strategy
+
+- **`19.0`** (renamed from `main`): the verified Odoo **19.0** line - generator
+  engine plus the Enterprise install smoke-test harness. This is what delivered
+  demo packages are built and tested against today; kept stable, changes only as
+  fixes/backports.
+- **`20.0`** (branched from `19.0`): the new development trunk for Odoo **20**.
+  First step is the install smoke-test harness against a local Odoo 20 instance;
+  the verified patterns are ported/verified against the Odoo 20 source afterwards.
+  Intended as the GitHub default branch once the harness runs.
+
 ## End goal
 
 One call with the customer name is enough: research of industry/size/
@@ -21,14 +32,18 @@ the module - minimal friction.
 
 ## Achieved
 
-- Generator engine (JSON spec -> installable Odoo 19.0 module ZIP).
+- Generator engine (JSON spec -> installable Odoo 19.0 module ZIP) on the `19.0`
+  branch.
 - Verified building blocks: company (incl. chart of accounts), partners, products,
   bills of materials, manufacturing orders (draft; implies the warehouse),
   sales (incl. quotation templates `sale.order.template`), CRM, purchasing,
   inventory, accounting (posted invoices), helpdesk, projects
-  (`project.project` + `project.task` + task stages).
-  Three reference specs (manufacturing, multi-app/Enterprise, German IT system
-  house `de_skr04`).
+  (`project.project` + `project.task` + task stages), maintenance
+  (`maintenance.equipment`/`request`), quality control (`quality.point`/`check`/
+  `alert`), subscriptions (`sale.order` + `plan_id`) and field service
+  (`project.is_fsm`).
+  Reference specs: manufacturing, multi-app/Enterprise, German IT system house
+  `de_skr04`, German CHP manufacturer `enertec`.
 - Static validation of the known landmines + tests; real
   installation procedure against Enterprise 19.0 documented.
 - `engine/docker/test_install.py`: automated installation smoke test against the
@@ -43,6 +58,12 @@ the module - minimal friction.
 
 ## Open
 
+- **Odoo 20 support (`20.0` branch):** stand up the install smoke-test harness
+  against a local Odoo 20 Enterprise instance (`../odoodemo-local-20`, parallel to
+  the 19.0 instance), then verify/adjust the Odoo 19.0 patterns against the Odoo
+  20 source (`skills/odoo-demo-data/reference/verification-protocol.md`) and run
+  the reference specs through the harness. Trigger: Odoo 20 availability + first
+  customer on 20.
 - **Web research automation:** Automatically derive industry/size/business model
   from a customer name and, from it, the required apps, process chain and object
   types (per-customer composition, no fixed verticals - see the principles above).
@@ -51,11 +72,8 @@ the module - minimal friction.
   users instead of only `base.user_admin`. (An auto-created demo user with the
   company name and admin rights already exists, see "Achieved" - this item is
   about *more* users, not the single demo login.)
-- **Subscription/SaaS building blocks** (subscriptions, maintenance products) -
-  conceptually named, not implemented; only built when a concrete customer needs
-  them, and then as building blocks, not as a fixed vertical.
-- **More object types/apps** depending on customer demand (e.g. subscriptions,
-  quality, maintenance - only with a concrete customer, then verified + tested).
+- **More object types/apps** depending on customer demand - only with a concrete
+  customer, then verified + tested (e.g. approvals, timesheets, e-commerce).
 
 ## Deliberately out of scope
 

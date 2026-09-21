@@ -17,6 +17,9 @@ from .model import (
     CustomerSpec,
     HelpdeskTicket,
     Invoice,
+    MaintenanceEquipment,
+    MaintenanceEquipmentCategory,
+    MaintenanceRequest,
     ManufacturingOrder,
     Partner,
     Product,
@@ -24,9 +27,13 @@ from .model import (
     ProjectTask,
     ProjectTaskStage,
     PurchaseOrder,
+    QualityAlert,
+    QualityCheck,
+    QualityPoint,
     QuotationTemplate,
     SaleOrder,
     StockQuant,
+    Subscription,
 )
 from .xmlgen import field_el, record_el, render_odoo_file
 
@@ -34,7 +41,20 @@ from .xmlgen import field_el, record_el, render_odoo_file
 # within a module because a module creates exactly one demo company.
 CRM_TEAM_XMLID = "crm_team_demo"
 HELPDESK_TEAM_XMLID = "helpdesk_team_demo"
+MAINTENANCE_TEAM_XMLID = "maintenance_team_demo"
 WAREHOUSE_XMLID = "warehouse_demo"
+
+# Foreign xmlids (shipped by the apps, verified-patterns 4.24/4.25). The engine
+# reuses them so no extra team/plan records are needed.
+QUALITY_TEAM_XMLID = "quality.quality_alert_team0"
+QUALITY_TEST_TYPE_XMLIDS = {
+    "passfail": "quality_control.test_type_passfail",
+    "measure": "quality_control.test_type_measure",
+}
+SUBSCRIPTION_PLAN_XMLIDS = {
+    "month": "sale_subscription.subscription_plan_month",
+    "year": "sale_subscription.subscription_plan_year",
+}
 
 
 def _context(language: str, company_xmlid: str | None = None) -> str:
@@ -122,6 +142,10 @@ def product_record(p: Product, company_xmlid: str, language: str) -> ET.Element:
         fields.append(field_el("volume", text=p.volume))
     if p.description_sale:
         fields.append(field_el("description_sale", text=p.description_sale))
+    if p.recurring_invoice is not None:
+        # product.template.recurring_invoice only exists with sale_subscription
+        # (verified-patterns 4.25); validate.py rejects it without that dependency.
+        fields.append(field_el("recurring_invoice", text=p.recurring_invoice))
     fields.append(field_el("company_id", ref=company_xmlid))
     return record_el(
         "product.product",
@@ -285,8 +309,14 @@ def project_record(
         fields.append(field_el("date", text=p.date_end))
     if p.privacy_visibility:
         fields.append(field_el("privacy_visibility", text=p.privacy_visibility))
-    link = ", ".join(f"Command.link(ref('{s}'))" for s in task_stage_xmlids)
-    fields.append(field_el("type_ids", eval_=f"[{link}]"))
+    if p.is_fsm:
+        # Field Service project (industry_fsm): requires company_id (DB CHECK) and
+        # gets its task stages auto-assigned by industry_fsm's create() override,
+        # so type_ids is deliberately NOT set here (verified-patterns 4.26).
+        fields.append(field_el("is_fsm", text=True))
+    else:
+        link = ", ".join(f"Command.link(ref('{s}'))" for s in task_stage_xmlids)
+        fields.append(field_el("type_ids", eval_=f"[{link}]"))
     return record_el("project.project", p.xml_id, fields, context=_context(language, company_xmlid))
 
 
@@ -313,6 +343,213 @@ def project_task_record(t: ProjectTask, company_xmlid: str, language: str) -> ET
     if t.allocated_hours is not None:
         fields.append(field_el("allocated_hours", text=t.allocated_hours))
     return record_el("project.task", t.xml_id, fields, context=_context(language, company_xmlid))
+
+
+# ---------------------------------------------------------------------------
+# Maintenance (module `maintenance`, Community). Verified-patterns 4.22.
+# ---------------------------------------------------------------------------
+
+
+def maintenance_team_record(spec: CustomerSpec) -> ET.Element:
+    """A ``maintenance.team`` for the demo company. ``maintenance.request.
+    maintenance_team_id`` is required with a default that searches a team for the
+    company; without a demo team it would fall back to another company's team
+    (``check_company`` violation). Verified-patterns 4.22."""
+    fields = [
+        field_el("name", text=spec.resolved_maintenance_team_name),
+        field_el("company_id", ref=spec.company.xml_id),
+    ]
+    return record_el("maintenance.team", MAINTENANCE_TEAM_XMLID, fields,
+                     context=_context(spec.resolved_language))
+
+
+def maintenance_equipment_category_record(
+    category: MaintenanceEquipmentCategory, company_xmlid: str, language: str
+) -> ET.Element:
+    fields = [
+        field_el("name", text=category.name),
+        field_el("company_id", ref=company_xmlid),
+    ]
+    if category.note:
+        fields.append(field_el("note", text=category.note))
+    return record_el("maintenance.equipment.category", category.xml_id, fields,
+                     context=_context(language))
+
+
+def maintenance_equipment_record(
+    e: MaintenanceEquipment, company_xmlid: str, language: str
+) -> ET.Element:
+    """``maintenance.equipment``. ``effective_date`` (required in the mixin) has a
+    ``context_today`` default and is left to the ORM; ``serial_no`` is UNIQUE.
+    Verified-patterns 4.22."""
+    fields = [
+        field_el("name", text=e.name),
+        field_el("company_id", ref=company_xmlid),
+        field_el("maintenance_team_id", ref=MAINTENANCE_TEAM_XMLID),
+    ]
+    if e.category_xmlid:
+        fields.append(field_el("category_id", ref=e.category_xmlid))
+    if e.partner_xmlid:
+        fields.append(field_el("partner_id", ref=e.partner_xmlid))
+    if e.serial_no:
+        fields.append(field_el("serial_no", text=e.serial_no))
+    if e.model:
+        fields.append(field_el("model", text=e.model))
+    if e.assign_date:
+        fields.append(field_el("assign_date", text=e.assign_date))
+    if e.warranty_date:
+        fields.append(field_el("warranty_date", text=e.warranty_date))
+    if e.cost is not None:
+        fields.append(field_el("cost", text=e.cost))
+    if e.note:
+        fields.append(field_el("note", text=e.note))
+    return record_el("maintenance.equipment", e.xml_id, fields, context=_context(language))
+
+
+def maintenance_request_record(
+    r: MaintenanceRequest, company_xmlid: str, language: str
+) -> ET.Element:
+    """``maintenance.request``. ``maintenance_team_id`` is set explicitly to the
+    demo team (required, default searches by company). ``create()`` clears/fills
+    ``close_date`` based on the stage's ``done`` flag. Verified-patterns 4.22."""
+    fields = [
+        field_el("name", text=r.name),
+        field_el("company_id", ref=company_xmlid),
+        field_el("maintenance_team_id", ref=MAINTENANCE_TEAM_XMLID),
+        field_el("stage_id", ref=r.stage_xmlid),
+        field_el("maintenance_type", text=r.maintenance_type),
+    ]
+    if r.equipment_xmlid:
+        fields.append(field_el("equipment_id", ref=r.equipment_xmlid))
+    if r.priority is not None:
+        fields.append(field_el("priority", text=r.priority))
+    if r.description:
+        fields.append(field_el("description", text=r.description))
+    if r.request_date:
+        fields.append(field_el("request_date", text=r.request_date))
+    if r.schedule_date:
+        fields.append(field_el("schedule_date", text=r.schedule_date))
+    if r.close_date:
+        fields.append(field_el("close_date", text=r.close_date))
+    return record_el("maintenance.request", r.xml_id, fields, context=_context(language))
+
+
+# ---------------------------------------------------------------------------
+# Quality control (app `quality_control`, Enterprise). Verified-patterns 4.24.
+# ---------------------------------------------------------------------------
+
+
+def quality_point_record(
+    p: QualityPoint, company_xmlid: str, warehouse_xmlid: str, language: str
+) -> ET.Element:
+    """``quality.point``. ``picking_type_ids`` is required: the demo warehouse's
+    manufacturing operation type (``manu_type_id``, added by mrp) is set so the
+    point belongs to the demo company. ``team_id`` is the shipped global quality
+    team. Verified-patterns 4.24."""
+    fields = [
+        field_el("name", text=p.name),
+        field_el("company_id", ref=company_xmlid),
+        field_el("team_id", ref=QUALITY_TEAM_XMLID),
+        field_el("test_type_id", ref=QUALITY_TEST_TYPE_XMLIDS[p.test_type]),
+        field_el("measure_on", text=p.measure_on),
+        field_el("measure_frequency_type", text="all"),
+        field_el(
+            "picking_type_ids",
+            model="stock.warehouse",
+            eval_=f"[(6, 0, [obj(ref('{warehouse_xmlid}')).manu_type_id.id])]",
+        ),
+    ]
+    if p.title:
+        fields.append(field_el("title", text=p.title))
+    if p.product_xmlids:
+        refs = ", ".join(f"ref('{x}')" for x in p.product_xmlids)
+        fields.append(field_el("product_ids", eval_=f"[(6, 0, [{refs}])]"))
+    if p.note:
+        fields.append(field_el("note", text=p.note))
+    return record_el("quality.point", p.xml_id, fields, context=_context(language, company_xmlid))
+
+
+def quality_check_record(
+    c: QualityCheck, company_xmlid: str, language: str
+) -> ET.Element:
+    """``quality.check``. ``name`` is auto-filled from a sequence by ``create()``;
+    ``team_id``/``test_type_id``/``measure_on``/``title``/``note`` are computed
+    from ``point_id``. ``product_id`` must be the linked production order's
+    finished product (``_check_allowed_product_ids_with_production``).
+    Verified-patterns 4.24."""
+    fields = [
+        field_el("point_id", ref=c.point_xmlid),
+        field_el("company_id", ref=company_xmlid),
+        field_el("quality_state", text=c.quality_state),
+    ]
+    if c.production_xmlid:
+        fields.append(field_el("production_id", ref=c.production_xmlid))
+    if c.product_xmlid:
+        fields.append(field_el("product_id", ref=c.product_xmlid))
+    if c.note:
+        fields.append(field_el("note", text=c.note))
+    return record_el("quality.check", c.xml_id, fields, context=_context(language, company_xmlid))
+
+
+def quality_alert_record(
+    a: QualityAlert, company_xmlid: str, language: str
+) -> ET.Element:
+    """``quality.alert``. ``team_id`` is the shipped global team; ``stage_id``
+    defaults to the shipped "New" stage. ``product_tmpl_id`` is derived from the
+    product variant (``obj(ref(...)).product_tmpl_id.id``). Verified-patterns 4.24."""
+    fields = [
+        field_el("name", text=a.name),
+        field_el("company_id", ref=company_xmlid),
+        field_el("team_id", ref=QUALITY_TEAM_XMLID),
+        field_el("stage_id", ref=a.stage_xmlid),
+    ]
+    if a.product_xmlid:
+        fields.append(field_el(
+            "product_tmpl_id", model="product.product",
+            eval_=f"obj(ref('{a.product_xmlid}')).product_tmpl_id.id",
+        ))
+        fields.append(field_el("product_id", ref=a.product_xmlid))
+    if a.partner_xmlid:
+        fields.append(field_el("partner_id", ref=a.partner_xmlid))
+    if a.production_xmlid:
+        fields.append(field_el("production_id", ref=a.production_xmlid))
+    if a.priority is not None:
+        fields.append(field_el("priority", text=a.priority))
+    if a.description:
+        fields.append(field_el("description", text=a.description))
+    return record_el("quality.alert", a.xml_id, fields, context=_context(language, company_xmlid))
+
+
+# ---------------------------------------------------------------------------
+# Subscriptions (app `sale_subscription`, Enterprise). Verified-patterns 4.25.
+# ---------------------------------------------------------------------------
+
+
+def subscription_record(s: Subscription, company_xmlid: str, language: str) -> ET.Element:
+    """A subscription as a ``sale.order`` with ``plan_id`` (there is no
+    ``sale.subscription`` model in 19.0). Created in ``state='draft'``: no
+    invoices/pickings are generated and the plan/line constraint exempts drafts.
+    ``is_subscription``/``subscription_state`` are computed and not set.
+    Verified-patterns 4.25."""
+    line_dicts = []
+    for line in s.lines:
+        parts = [
+            f"'product_id': ref('{line.product_xmlid}')",
+            f"'product_uom_qty': {line.qty}",
+        ]
+        if line.description:
+            parts.append(f"'name': {line.description!r}")
+        line_dicts.append("(0, 0, {" + ", ".join(parts) + "})")
+    fields = [
+        field_el("partner_id", ref=s.partner_xmlid),
+        field_el("company_id", ref=company_xmlid),
+        field_el("plan_id", ref=SUBSCRIPTION_PLAN_XMLIDS[s.plan]),
+        field_el("state", text=s.state),
+    ]
+    if s.start_date:
+        fields.append(field_el("start_date", text=s.start_date))
+    fields.append(field_el("order_line", eval_=f"[{', '.join(line_dicts)}]"))
+    return record_el("sale.order", s.xml_id, fields, context=_context(language))
 
 
 # ---------------------------------------------------------------------------
@@ -639,5 +876,63 @@ def render_helpdesk_ticket_xml(spec: CustomerSpec) -> str:
     return render_odoo_file(
         [helpdesk_ticket_record(t, HELPDESK_TEAM_XMLID, spec.company.xml_id, spec.resolved_language)
          for t in spec.helpdesk_tickets],
+        noupdate=True,
+    )
+
+
+def render_maintenance_team_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file([maintenance_team_record(spec)])
+
+
+def render_maintenance_equipment_category_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [maintenance_equipment_category_record(c, spec.company.xml_id, spec.resolved_language)
+         for c in spec.maintenance_equipment_categories]
+    )
+
+
+def render_maintenance_equipment_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [maintenance_equipment_record(e, spec.company.xml_id, spec.resolved_language)
+         for e in spec.maintenance_equipment],
+        noupdate=True,
+    )
+
+
+def render_maintenance_request_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [maintenance_request_record(r, spec.company.xml_id, spec.resolved_language)
+         for r in spec.maintenance_requests],
+        noupdate=True,
+    )
+
+
+def render_quality_point_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [quality_point_record(p, spec.company.xml_id, WAREHOUSE_XMLID, spec.resolved_language)
+         for p in spec.quality_points]
+    )
+
+
+def render_quality_check_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [quality_check_record(c, spec.company.xml_id, spec.resolved_language)
+         for c in spec.quality_checks],
+        noupdate=True,
+    )
+
+
+def render_quality_alert_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [quality_alert_record(a, spec.company.xml_id, spec.resolved_language)
+         for a in spec.quality_alerts],
+        noupdate=True,
+    )
+
+
+def render_subscription_xml(spec: CustomerSpec) -> str:
+    return render_odoo_file(
+        [subscription_record(s, spec.company.xml_id, spec.resolved_language)
+         for s in spec.subscriptions],
         noupdate=True,
     )

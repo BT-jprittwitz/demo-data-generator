@@ -47,3 +47,7 @@ the bundle) - do not fake data for it.
 | `mrp` | `boms`, `manufacturing_orders` | `mrp` | `stock`, `products` | the company manufactures goods from components (bills of materials); implies a warehouse. |
 | `accounting` | `invoices` | `account` | `products`, `contacts` | posted customer/vendor invoices; needs a chart of accounts (company.chart_template). |
 | `helpdesk` | `helpdesk_tickets` | `helpdesk` | `contacts` | after-sales support / service tickets (Enterprise). |
+| `maintenance` | `maintenance_equipment_categories`, `maintenance_equipment`, `maintenance_requests` | `maintenance` | `contacts` | the company maintains equipment/assets with preventive or corrective maintenance requests (Community app). |
+| `quality` | `quality_points`, `quality_checks`, `quality_alerts` | `quality_control` | `mrp`, `contacts` | incoming/outgoing/in-process quality control (control points, checks, alerts) for regulated or certified production (Enterprise). |
+| `subscriptions` | `subscriptions` | `sale_subscription` | `sales` | recurring revenue (service/maintenance contracts) invoiced periodically (Enterprise; needs recurring products). |
+| `field_service` | - | `industry_fsm` | `project` | on-site interventions are planned and executed by technicians (Enterprise; marks projects as FSM via project.is_fsm). |

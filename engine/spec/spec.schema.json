@@ -159,6 +159,9 @@
         },
         "description_sale": {
           "type": "string"
+        },
+        "recurring_invoice": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false,
@@ -592,6 +595,9 @@
         },
         "privacy_visibility": {
           "type": "string"
+        },
+        "is_fsm": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false,
@@ -658,6 +664,250 @@
         "xml_id",
         "name",
         "project_xmlid"
+      ]
+    },
+    "MaintenanceEquipmentCategory": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name"
+      ]
+    },
+    "MaintenanceEquipment": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "category_xmlid": {
+          "type": "string"
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "serial_no": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "assign_date": {
+          "type": "string"
+        },
+        "warranty_date": {
+          "type": "string"
+        },
+        "cost": {
+          "type": "number"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name"
+      ]
+    },
+    "MaintenanceRequest": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "equipment_xmlid": {
+          "type": "string"
+        },
+        "maintenance_type": {
+          "type": "string"
+        },
+        "stage_xmlid": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "request_date": {
+          "type": "string"
+        },
+        "schedule_date": {
+          "type": "string"
+        },
+        "close_date": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name"
+      ]
+    },
+    "QualityPoint": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "product_xmlids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "test_type": {
+          "type": "string"
+        },
+        "measure_on": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name"
+      ]
+    },
+    "QualityCheck": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "point_xmlid": {
+          "type": "string"
+        },
+        "production_xmlid": {
+          "type": "string"
+        },
+        "product_xmlid": {
+          "type": "string"
+        },
+        "quality_state": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "point_xmlid"
+      ]
+    },
+    "QualityAlert": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "product_xmlid": {
+          "type": "string"
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "production_xmlid": {
+          "type": "string"
+        },
+        "stage_xmlid": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "name"
+      ]
+    },
+    "SubscriptionLine": {
+      "type": "object",
+      "properties": {
+        "product_xmlid": {
+          "type": "string"
+        },
+        "qty": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "product_xmlid"
+      ]
+    },
+    "Subscription": {
+      "type": "object",
+      "properties": {
+        "xml_id": {
+          "type": "string"
+        },
+        "partner_xmlid": {
+          "type": "string"
+        },
+        "plan": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "start_date": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SubscriptionLine"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "xml_id",
+        "partner_xmlid"
       ]
     },
     "CustomerSpec": {
@@ -754,6 +1004,48 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/ProjectTask"
+          }
+        },
+        "maintenance_equipment_categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MaintenanceEquipmentCategory"
+          }
+        },
+        "maintenance_equipment": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MaintenanceEquipment"
+          }
+        },
+        "maintenance_requests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MaintenanceRequest"
+          }
+        },
+        "quality_points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QualityPoint"
+          }
+        },
+        "quality_checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QualityCheck"
+          }
+        },
+        "quality_alerts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QualityAlert"
+          }
+        },
+        "subscriptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Subscription"
           }
         },
         "language": {
