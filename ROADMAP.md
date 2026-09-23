@@ -17,9 +17,8 @@ Principles:
 - **`20.0`**: the development trunk for Odoo **20** - generator engine plus the
   Enterprise install smoke-test harness (`../odoodemo-local-20`). This is what
   delivered demo packages are built and tested against today.
-- **`main`**: the repository's default branch. It still points at the `19.0` line;
-  once the `20.0` migration is merged (branch-strategy step, not done yet) it will
-  fast-forward to `20.0`.
+- **`main`**: the repository's default branch; follows `20.0` (fast-forward) so the
+  default branch always reflects the current state.
 - **`19.0`**: the previous verified Odoo **19.0** line, kept stable (changes only
   as fixes/backports). Its local instance is `../odoodemo-local`.
 
