@@ -79,6 +79,13 @@ Every generated module creates, besides the administrator, a demo login
 `post_init_hook` - no manual user setup after a demo appointment. If the login
 already exists, creation is skipped (verified-patterns 4.18).
 
+## Local test instance
+
+The installation smoke test targets a local Odoo 20 Enterprise (trial) instance
+in `../odoodemo-local-20` (outside this repo). There is no official `odoo:20.0`
+Docker image yet, so that instance is built from source on top of the `odoo:19.0`
+base image. Setup and usage: [engine/docker/README.md](engine/docker/README.md).
+
 ## Tests
 
 ```bash
@@ -99,7 +106,7 @@ engine/
   validate.py       static check of a built module (no Odoo kernel needed)
   volume.py         recommended minimum demo-data volume per object type
   verify.py         spec-aware Postgres assertions for the install smoke test
-  cli.py            CLI (generate / validate / spec-schema)
+  cli.py            CLI (generate / validate / capabilities / new / spec-schema)
   spec/spec.schema.json  generated JSON schema of the customer specification
   tests/           engine tests (no Odoo needed)
   docker/          installation smoke-test harness against the local Enterprise

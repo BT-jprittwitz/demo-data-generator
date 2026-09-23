@@ -3,6 +3,11 @@
 Generated modules are tested against the local Odoo 20 Enterprise (trial)
 instance in `../odoodemo-local-20` (Docker). This repo ships **no Community setup**.
 
+There is no official `odoo:20.0` Docker image yet, so `../odoodemo-local-20` is
+built from source on top of the `odoo:19.0` base image (arm64, Python 3.12); see
+its `Dockerfile`. The instance mounts Enterprise 20.0 read-only, never a pure
+Community setup.
+
 Status: the procedure is in use and verified (bt_demo_mfg, incl. the Postgres
 cross-check of the company-context fixes 4.5/4.7). `engine validate` (purely
 structural) remains the quick pre-check, but does not replace a real

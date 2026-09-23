@@ -84,7 +84,7 @@ engine/
   validate.py      static check of the known landmines (no Odoo needed)
   volume.py        recommended minimum demo-data volume per object type
   verify.py        spec-aware Postgres assertions for the install smoke test
-  cli.py           CLI (generate / validate)
+  cli.py           CLI (generate / validate / capabilities / new / spec-schema)
 examples/          example specifications
 engine/tests/      engine tests:  python3 -m unittest discover -s engine/tests -t .
 engine/docker/     installation smoke-test harness, Enterprise instance ../odoodemo-local-20 (see engine/docker/README.md)
