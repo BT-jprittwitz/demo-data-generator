@@ -1,4 +1,4 @@
-# Installation smoke test (real Odoo 19.0 kernel)
+# Installation smoke test (real Odoo 20.0 kernel)
 
 Static validation (`engine/validate.py`) does **not** replace a real
 installation. Install against a real kernel before every delivery.
@@ -27,7 +27,7 @@ from `ir_model_data` plus semantic checks (invoices `state='posted'`,
 `standard_price` stored under the demo company key, tasks have a stage). A failed
 assertion is exit 1 with the DB kept for inspection.
 
-It targets the local Enterprise instance `../odoodemo-local` (compose service
+It targets the local Enterprise instance `../odoodemo-local-20` (compose service
 `web`) by default:
 
 ```bash
@@ -43,13 +43,14 @@ omitted and exactly one `.zip` is in `./output`, that module is used.
 
 ## Enterprise (the only supporting setup)
 
-Prerequisite: local setup `../odoodemo-local` (Odoo 19.0 Enterprise trial via
+Prerequisite: local setup `../odoodemo-local-20` (Odoo 20.0 Enterprise trial via
 Docker, mounts `<this repo>/output` as `/mnt/extra-addons`). There is no Community
 setup; Enterprise modules (e.g. `helpdesk`, `account_accountant`) are always
-available.
+available. There is no official `odoo:20.0` image yet, so the instance builds from
+source on the `odoo:19.0` base image (see `../odoodemo-local-20/Dockerfile`).
 
 ```bash
-cd ../odoodemo-local
+cd ../odoodemo-local-20
 # fresh DB
 docker compose exec -T db psql -U odoo -d postgres -c "DROP DATABASE IF EXISTS test_<name>;"
 # install

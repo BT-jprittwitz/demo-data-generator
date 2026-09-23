@@ -1,7 +1,7 @@
 # Installation smoke test against the local Enterprise instance
 
-Generated modules are tested against the local Odoo 19 Enterprise (trial)
-instance in `../odoodemo-local` (Docker). This repo ships **no Community setup**.
+Generated modules are tested against the local Odoo 20 Enterprise (trial)
+instance in `../odoodemo-local-20` (Docker). This repo ships **no Community setup**.
 
 Status: the procedure is in use and verified (bt_demo_mfg, incl. the Postgres
 cross-check of the company-context fixes 4.5/4.7). `engine validate` (purely
@@ -14,13 +14,13 @@ The Enterprise instance must be running; it mounts this repo's `output/` as
 `/mnt/extra-addons`:
 
 ```bash
-docker compose -f ../odoodemo-local/docker-compose.yml up -d
+docker compose -f ../odoodemo-local-20/docker-compose.yml up -d
 ```
 
 ## Procedure
 
 Automated (recommended) - `test_install.py` uses a fresh DB, analyses the log and
-returns the complete log on failure. It targets `../odoodemo-local` (compose
+returns the complete log on failure. It targets `../odoodemo-local-20` (compose
 service `web`) by default:
 
 ```bash
@@ -32,7 +32,7 @@ Manual alternative (run from the repo root):
 
 ```bash
 python3 -m engine.cli generate --spec examples/muster_foerdertechnik.json --out output
-cd ../odoodemo-local
+cd ../odoodemo-local-20
 # force a fresh test DB, otherwise only the existing one is loaded:
 docker compose exec -T db psql -U odoo -d postgres -c "DROP DATABASE IF EXISTS test_bt_demo_mfg;"
 docker compose run --rm web \
@@ -64,7 +64,7 @@ context fix 4.7), not against the installation company.
 `test_install.py` (stdlib only) starts `docker compose run` against a fresh,
 uniquely named DB, scans the log for `Traceback` / `CRITICAL` and the
 `Module <name> loaded` marker, prints the complete log on failure, and drops the
-DB on success. Defaults: `--compose-dir ../odoodemo-local`, `--service web`
+DB on success. Defaults: `--compose-dir ../odoodemo-local-20`, `--service web`
 (override both for a different instance).
 
 After a clean install it additionally runs **spec-aware Postgres data

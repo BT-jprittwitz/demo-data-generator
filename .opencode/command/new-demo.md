@@ -22,7 +22,7 @@ the reference files it points to. Steps:
 4. Run the real install smoke test per `reference/install-test-protocol.md`
    (fresh DB, no `--test-enable`, Postgres cross-check).
 5. On an install error: read the full traceback first, then fix. Never guess Odoo
-   field names - verify new object types against the 19.0 source per
+   field names - verify new object types against the 20.0 source per
    `reference/verification-protocol.md`.
 
 Summarise at the end: files created, verified installation, open points.

@@ -13,7 +13,7 @@
     "city": "St. Gallen",
     "zip": "9000",
     "country_xmlid": "base.ch",
-    "vat": "CHE-100.200.300",
+    "vat": "CHE-100.200.309 MWST",
     "currency_xmlid": "base.CHF"
   },
   "partners": [
@@ -21,7 +21,7 @@
       "xml_id": "partner_1",
       "name": "Grueninger Foerdertechnik AG",
       "country_xmlid": "base.ch",
-      "vat": "CHE-111.222.333",
+      "vat": "CHE-111.222.338 MWST",
       "street": "Werkstrasse 3",
       "city": "St. Gallen",
       "zip": "9000"
@@ -30,7 +30,7 @@
       "xml_id": "partner_2",
       "name": "Baumann Anlagenbau GmbH",
       "country_xmlid": "base.de",
-      "vat": "DE311445566",
+      "vat": "DE311445563",
       "street": "Industriering 8",
       "city": "Augsburg",
       "zip": "86150"
@@ -39,7 +39,7 @@
       "xml_id": "partner_3",
       "name": "Lefebvre Machines SA",
       "country_xmlid": "base.fr",
-      "vat": "FR55667788990",
+      "vat": "FR23334175221",
       "street": "Zone Industrielle 2",
       "city": "Mulhouse",
       "zip": "68100"

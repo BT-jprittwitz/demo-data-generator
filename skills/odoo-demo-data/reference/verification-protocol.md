@@ -1,15 +1,15 @@
 # Verification protocol: new object type or new field
 
 Goal: **Never guess Odoo field names or behavior.** Every new object type and
-every new field is first verified against the real Odoo 19.0 source.
+every new field is first verified against the real Odoo 20.0 source.
 
 ## Where the source lives
 
 - Local checkout (development machine):
-  - Community: `../odoodemo-local/repos/odoo/addons/<module>/`
-  - Enterprise: `../odoodemo-local/repos/enterprise/<module>/`
-  - base/ORM: `../odoodemo-local/repos/odoo/odoo/addons/base/`, `../odoodemo-local/repos/odoo/odoo/orm/`
-- Alternatively GitHub `github.com/odoo/odoo`, branch/tag `19.0`.
+  - Community: `../odoodemo-local-20/repos/odoo/addons/<module>/`
+  - Enterprise: `../odoodemo-local-20/repos/enterprise/<module>/`
+  - base/ORM: `../odoodemo-local-20/repos/odoo/odoo/addons/base/`, `../odoodemo-local-20/repos/odoo/odoo/orm/`
+- Alternatively GitHub `github.com/odoo/odoo`, branch/tag `20.0`.
 
 ## What to check (checklist)
 

@@ -1,10 +1,10 @@
 """Builds the XML record elements from the dataclasses in model.py, exactly
-following the patterns verified against the Odoo 19.0 source
+following the patterns verified against the Odoo 20.0 source
 (see skills/odoo-demo-data/reference/verified-patterns.md).
 
 Each function here corresponds to a verified pattern. If a new field/behaviour
 is needed that is not covered yet, do NOT simply add it: first verify it against
-the Odoo 19.0 source and record the finding in verified-patterns.md.
+the Odoo 20.0 source and record the finding in verified-patterns.md.
 """
 from __future__ import annotations
 
@@ -163,7 +163,7 @@ def bom_record(b: Bom, company_xmlid: str, language: str) -> ET.Element:
         "(0, 0, {"
         f"'product_id': ref('{line.product_xmlid}'), "
         f"'product_qty': {line.qty}, "
-        f"'product_uom_id': ref('{line.uom_xmlid}')"
+        f"'uom_id': ref('{line.uom_xmlid}')"
         "})"
         for line in b.lines
     )
@@ -174,7 +174,7 @@ def bom_record(b: Bom, company_xmlid: str, language: str) -> ET.Element:
             eval_=f"obj(ref('{b.product_xmlid}')).product_tmpl_id.id",
         ),
         field_el("product_qty", text=b.qty),
-        field_el("product_uom_id", ref=b.uom_xmlid),
+        field_el("uom_id", ref=b.uom_xmlid),
         field_el("type", text="normal"),
         field_el("bom_line_ids", eval_=f"[{line_dicts}]"),
         field_el("company_id", ref=company_xmlid),
@@ -187,11 +187,11 @@ def mrp_production_record(
 ) -> ET.Element:
     """``mrp.production`` as a DRAFT manufacturing order (verified-patterns.md 4.17).
 
-    ``state`` is compute+store+readonly in 19.0 and must NOT be set (a new MO is
+    ``state`` is compute+store+readonly in 20.0 and must NOT be set (a new MO is
     ``draft``). ``picking_type_id`` is required and its compute falls back to the
     company warehouse; it is set explicitly from the demo warehouse's
     manufacturing operation type (``stock.warehouse.manu_type_id``, added by mrp)
-    so it cannot pick another company's operation type. ``product_uom_id`` and
+    so it cannot pick another company's operation type. ``uom_id`` and
     the locations are computed from product/BOM/operation type. No
     ``action_confirm`` -> no stock posting.
     """
@@ -309,14 +309,8 @@ def project_record(
         fields.append(field_el("date", text=p.date_end))
     if p.privacy_visibility:
         fields.append(field_el("privacy_visibility", text=p.privacy_visibility))
-    if p.is_fsm:
-        # Field Service project (industry_fsm): requires company_id (DB CHECK) and
-        # gets its task stages auto-assigned by industry_fsm's create() override,
-        # so type_ids is deliberately NOT set here (verified-patterns 4.26).
-        fields.append(field_el("is_fsm", text=True))
-    else:
-        link = ", ".join(f"Command.link(ref('{s}'))" for s in task_stage_xmlids)
-        fields.append(field_el("type_ids", eval_=f"[{link}]"))
+    link = ", ".join(f"Command.link(ref('{s}'))" for s in task_stage_xmlids)
+    fields.append(field_el("type_ids", eval_=f"[{link}]"))
     return record_el("project.project", p.xml_id, fields, context=_context(language, company_xmlid))
 
 
@@ -425,8 +419,6 @@ def maintenance_request_record(
         fields.append(field_el("priority", text=r.priority))
     if r.description:
         fields.append(field_el("description", text=r.description))
-    if r.request_date:
-        fields.append(field_el("request_date", text=r.request_date))
     if r.schedule_date:
         fields.append(field_el("schedule_date", text=r.schedule_date))
     if r.close_date:
@@ -495,8 +487,9 @@ def quality_alert_record(
     a: QualityAlert, company_xmlid: str, language: str
 ) -> ET.Element:
     """``quality.alert``. ``team_id`` is the shipped global team; ``stage_id``
-    defaults to the shipped "New" stage. ``product_tmpl_id`` is derived from the
-    product variant (``obj(ref(...)).product_tmpl_id.id``). Verified-patterns 4.24."""
+    defaults to the shipped "New" stage. ``product_id`` is set directly (v20 has
+    no ``product_tmpl_id`` on ``quality.alert``; ``production_id`` comes from
+    ``quality_mrp``). Verified-patterns 4.24."""
     fields = [
         field_el("name", text=a.name),
         field_el("company_id", ref=company_xmlid),
@@ -504,10 +497,6 @@ def quality_alert_record(
         field_el("stage_id", ref=a.stage_xmlid),
     ]
     if a.product_xmlid:
-        fields.append(field_el(
-            "product_tmpl_id", model="product.product",
-            eval_=f"obj(ref('{a.product_xmlid}')).product_tmpl_id.id",
-        ))
         fields.append(field_el("product_id", ref=a.product_xmlid))
     if a.partner_xmlid:
         fields.append(field_el("partner_id", ref=a.partner_xmlid))
@@ -527,7 +516,7 @@ def quality_alert_record(
 
 def subscription_record(s: Subscription, company_xmlid: str, language: str) -> ET.Element:
     """A subscription as a ``sale.order`` with ``plan_id`` (there is no
-    ``sale.subscription`` model in 19.0). Created in ``state='draft'``: no
+    ``sale.subscription`` model in 20.0). Created in ``state='draft'``: no
     invoices/pickings are generated and the plan/line constraint exempts drafts.
     ``is_subscription``/``subscription_state`` are computed and not set.
     Verified-patterns 4.25."""
@@ -554,7 +543,7 @@ def subscription_record(s: Subscription, company_xmlid: str, language: str) -> E
 
 # ---------------------------------------------------------------------------
 # ERP building blocks (CRM, purchase, stock, accounting, helpdesk). Each object
-# type was verified against the Odoo 19.0 source first (verified-patterns.md
+# type was verified against the Odoo 20.0 source first (verified-patterns.md
 # 4.9-4.15).
 # ---------------------------------------------------------------------------
 
@@ -562,7 +551,7 @@ def subscription_record(s: Subscription, company_xmlid: str, language: str) -> E
 def account_chart_function(spec: CustomerSpec) -> ET.Element:
     """Loads the chart of accounts for the freshly created demo company.
 
-    Verified pattern from account/demo/account_demo.xml (account 19.0):
+    Verified pattern from account/demo/account_demo.xml (account 20.0):
     self=[], template_code, company, install_demo=False. A company created via
     XML does NOT get a chart of accounts automatically (account/models/company.py
     create() only loads it when the company has a parent with chart_template, and
@@ -632,7 +621,7 @@ def purchase_order_record(o: PurchaseOrder, company_xmlid: str, language: str) -
             f"'name': {line.description!r}",
             f"'price_unit': {line.price_unit}",
             f"'product_qty': {line.qty}",
-            "'product_uom_id': ref('uom.product_uom_unit')",
+            "'uom_id': ref('uom.product_uom_unit')",
         ]
         if line.date_planned:
             parts.append(f"'date_planned': {line.date_planned!r}")

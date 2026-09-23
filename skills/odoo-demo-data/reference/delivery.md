@@ -109,6 +109,17 @@ data where possible) and keys **all** demo data to it:
     verified pattern as `ch`/`de_*`, verified-patterns.md 4.11). Verified against
     Enterprise 19.0 including the spec-aware Postgres assertions.
 
+12. Odoo 20 migration (`20.0` branch): the generator now targets Odoo 20 and is
+    verified against Enterprise 20.0 (`../odoodemo-local-20`, built from source
+    since no official `odoo:20.0` image exists). All committed reference specs
+    install cleanly with green Postgres assertions. Ported/verified deltas:
+    `base_vat` removed (VAT is now always validated - several invented VAT numbers
+    in the examples had to be corrected), `product_uom_id` -> `uom_id` on
+    `mrp.production`/`mrp.bom`/`mrp.bom.line`/`purchase.order.line`,
+    `maintenance.request.request_date` removed, `quality.alert.product_tmpl_id`
+    removed. Field Service (`industry_fsm`/`project.is_fsm`) is obsolete in 20.0
+    and was dropped. See verified-patterns.md 4.10, 4.17, 4.19-4.26.
+
 ## Reference material
 
 The structural model was a colleague's module (Felix Schubert) for

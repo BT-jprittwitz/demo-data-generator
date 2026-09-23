@@ -203,17 +203,6 @@ BUNDLES: dict[str, Bundle] = {
             "(Enterprise; needs recurring products)."
         ),
     ),
-    "field_service": Bundle(
-        id="field_service",
-        label="Field service",
-        sections=(),
-        apps=("industry_fsm",),
-        requires=("project",),
-        relevant_when=(
-            "on-site interventions are planned and executed by technicians "
-            "(Enterprise; marks projects as FSM via project.is_fsm)."
-        ),
-    ),
 }
 
 
@@ -358,7 +347,7 @@ def render_capabilities_markdown(bundles: dict[str, Bundle] = BUNDLES) -> str:
         "- Recurring revenue -> subscriptions.",
         "",
         "If the reasoning needs an app we have **no bundle** for, say so explicitly and",
-        "treat it as a demand signal (verify against the Odoo 19.0 source, then build",
+        "treat it as a demand signal (verify against the Odoo 20.0 source, then build",
         "the bundle) - do not fake data for it.",
         "",
         "## Catalog",

@@ -9,9 +9,9 @@ prints the *complete* log (never just "failed").
 No ``--test-enable``: it would run the test suites of *all* modules (see
 skills/odoo-demo-data/reference/verified-patterns.md 4.8).
 
-Targets the local Odoo 19 Enterprise (trial) instance in ``../odoodemo-local``
-by default; that repo-local instance mounts this repo's ``output/`` as
-``/mnt/extra-addons``. There is no Community setup.
+Targets the local Odoo 20 Enterprise (trial) instance in
+``../odoodemo-local-20`` by default; that repo-local instance mounts this repo's
+``output/`` as ``/mnt/extra-addons``. There is no Community setup.
 
 Stdlib only; no CLI coupling. Example:
 
@@ -154,11 +154,11 @@ def main(argv: list[str] | None = None) -> int:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    default_compose_dir = Path(__file__).resolve().parents[2].parent / "odoodemo-local"
+    default_compose_dir = Path(__file__).resolve().parents[2].parent / "odoodemo-local-20"
     parser.add_argument("--module", help="module technical name (default: the single .zip in output/)")
     parser.add_argument("--compose-dir", default=str(default_compose_dir),
                         help="directory containing the docker-compose file "
-                             "(default: the local Enterprise instance ../odoodemo-local)")
+                             "(default: the local Enterprise instance ../odoodemo-local-20)")
     parser.add_argument("--service", default="web", help="compose service running Odoo (default: web)")
     parser.add_argument("--db-service", default="db", help="compose service running Postgres (default: db)")
     parser.add_argument("--db", help="database name (default: fresh unique name)")

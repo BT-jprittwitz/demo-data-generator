@@ -66,11 +66,6 @@ class ResolveTests(unittest.TestCase):
         )
         self.assertIn("quality_control", resolved.apps)
 
-    def test_field_service_pulls_project(self) -> None:
-        resolved = resolve(["field_service"])
-        self.assertIn("project", resolved.bundle_ids)
-        self.assertIn("industry_fsm", resolved.apps)
-
     def test_maintenance_and_subscriptions_resolve(self) -> None:
         self.assertEqual(
             resolve(["maintenance"]).sections,

@@ -152,9 +152,9 @@ The products must be `sale_ok` and belong to the demo company.
 `projects`: `xml_id`, `name` (required); optional `partner_xmlid` (customer),
 `stage_xmlid` (a `project.project.stage`, e.g.
 `project.project_project_stage_1`), `description`, `date_start`, `date_end`,
-`privacy_visibility` (`followers` | `invited_users` | `employees` | `portal`),
-`is_fsm` (bool, default `false` - Field Service project, bundle `field_service`,
-verified-patterns 4.26; its task stages are assigned by `industry_fsm`).
+`privacy_visibility` (`followers` | `invited_users` | `employees` | `portal`).
+(Field Service via `project.is_fsm` was removed in Odoo 20 - `industry_fsm` no
+longer exists; see verified-patterns 4.26.)
 
 `project_task_stages`: `xml_id`, `name` (required); optional `sequence`
 (default 10), `fold`. Task stages must be declared together with at least one
@@ -181,7 +181,7 @@ files `project_task_stage_data.xml`, `project_project_data.xml`,
 `maintenance_requests`: `xml_id`, `name` (required); optional `equipment_xmlid`,
 `maintenance_type` (`corrective` | `preventive`, default `corrective`),
 `stage_xmlid` (default `maintenance.stage_0`), `priority` (`0`..`3`),
-`description`, `request_date`, `schedule_date`, `close_date`.
+`description`, `schedule_date`, `close_date`.
 
 The generator creates one `maintenance.team` per demo company
 (`data/maintenance_team_data.xml`, always when the bundle is used) because a

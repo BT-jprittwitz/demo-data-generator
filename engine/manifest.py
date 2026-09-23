@@ -128,9 +128,6 @@ def depends(spec: CustomerSpec) -> list[str]:
         deps.append("helpdesk")
     if spec.needs_project:
         deps.append("project")
-    if spec.needs_field_service:
-        # Field Service (Enterprise): marks projects as is_fsm. Requires project.
-        deps.append("industry_fsm")
     if spec.needs_maintenance:
         # Community app; also pulls the stock_maintenance bridge when stock is
         # installed.
@@ -150,7 +147,7 @@ def render_manifest(spec: CustomerSpec) -> str:
     return f'''# -*- coding: utf-8 -*-
 {{
     "name": {spec.module.title!r},
-    "version": "19.0.1.0.0",
+    "version": "20.0.1.0.0",
     "category": {spec.module.category!r},
     "summary": {spec.module.summary!r},
     "description": {spec.module.description!r},
@@ -217,7 +214,7 @@ def render_hooks_py(spec: CustomerSpec) -> str:
 def _create_demo_user(env, company, admin):
     """Create a demo login (name = company, same rights as base.user_admin).
 
-    Verified against odoo/odoo@19.0 (verified-patterns.md 4.18):
+    Verified against odoo/odoo@20.0 (verified-patterns.md 4.18):
     - ``res.users`` has a UNIQUE(login) constraint. If a user with this login
       already exists (e.g. a second demo package in the same database) the
       creation is skipped instead of aborting the installation.

@@ -595,9 +595,6 @@
         },
         "privacy_visibility": {
           "type": "string"
-        },
-        "is_fsm": {
-          "type": "boolean"
         }
       },
       "additionalProperties": false,
@@ -747,9 +744,6 @@
           "type": "string"
         },
         "description": {
-          "type": "string"
-        },
-        "request_date": {
           "type": "string"
         },
         "schedule_date": {

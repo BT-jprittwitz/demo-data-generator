@@ -1,11 +1,11 @@
 ---
 name: odoo-demo-data
-description: Use when creating, extending, generating or testing an Odoo demo-data module (ZIP) for a customer - trigger words "Demo-Daten", "Demo-Paket", "Kunde X", a new customer JSON spec, a new Odoo object type/model (CRM, Purchasing, Inventory, Accounting, Helpdesk, ...), or installing a generated bt_demo_* module for verification. Covers the generator CLI, the customer spec format, verified Odoo 19.0 patterns and the real install smoke test.
+description: Use when creating, extending, generating or testing an Odoo demo-data module (ZIP) for a customer - trigger words "Demo-Daten", "Demo-Paket", "Kunde X", a new customer JSON spec, a new Odoo object type/model (CRM, Purchasing, Inventory, Accounting, Helpdesk, ...), or installing a generated bt_demo_* module for verification. Covers the generator CLI, the customer spec format, verified Odoo 20.0 patterns and the real install smoke test.
 ---
 
 # Odoo Demo-Data Generator
 
-Builds an installable Odoo 19.0 module (ZIP) from a customer specification (JSON).
+Builds an installable Odoo 20.0 module (ZIP) from a customer specification (JSON).
 Pure Python stdlib, no `pip install`. This skill is the entry point; the detailed
 knowledge lives in `reference/`.
 
@@ -20,7 +20,7 @@ knowledge lives in `reference/`.
 
 ## Hard rules (non-negotiable)
 
-1. **Never guess Odoo field names or behavior.** Verify against the real Odoo 19.0
+1. **Never guess Odoo field names or behavior.** Verify against the real Odoo 20.0
    source before any XML generation. Source and procedure:
    `reference/verification-protocol.md`.
 2. **On an installation error: read the complete traceback** before attempting a
@@ -67,7 +67,7 @@ knowledge lives in `reference/`.
    ```bash
    python3 -m engine.cli validate output/<technical_name>.zip
    ```
-5. **Install for real** against Odoo 19.0 and cross-check via Postgres:
+5. **Install for real** against Odoo 20.0 and cross-check via Postgres:
    `reference/install-test-protocol.md`.
 6. **Deliver.** Formalities (name, author, license), company scoping, ZIP:
    `reference/delivery.md`.
@@ -87,7 +87,7 @@ engine/
   cli.py           CLI (generate / validate)
 examples/          example specifications
 engine/tests/      engine tests:  python3 -m unittest discover -s engine/tests -t .
-engine/docker/     installation smoke-test harness, Enterprise instance ../odoodemo-local (see engine/docker/README.md)
+engine/docker/     installation smoke-test harness, Enterprise instance ../odoodemo-local-20 (see engine/docker/README.md)
 examples/reference/  historical reference modules (no longer a template)
 ```
 
@@ -110,7 +110,7 @@ examples/reference/  historical reference modules (no longer a template)
 
 | File | Content |
 |---|---|
-| `reference/verified-patterns.md` | All verified Odoo 19.0 patterns (fields, sources, landmines) |
+| `reference/verified-patterns.md` | All verified Odoo 20.0 patterns (fields, sources, landmines) |
 | `reference/spec-format.md` | Complete JSON schema of the customer specification |
 | `reference/capabilities.md` | Capability bundles (selection menu, "relevant when", dependencies) - generated |
 | `reference/verification-protocol.md` | How to verify a new object type/field against the source |

@@ -2,7 +2,7 @@
 
 Covers the error classes that have actually occurred or been verified so far
 (see skills/odoo-demo-data/reference/verified-patterns.md) and generic
-structural errors. Does NOT replace a real installation against an Odoo-19.0 kernel -
+structural errors. Does NOT replace a real installation against an Odoo-20.0 kernel -
 for that see skills/odoo-demo-data/reference/install-test-protocol.md.
 """
 from __future__ import annotations
@@ -24,18 +24,17 @@ KNOWN_EXTERNAL_PREFIXES = (
     "base.", "uom.", "product.", "mrp.", "sale.", "account.",
     "crm.", "sales_team.", "purchase.", "stock.", "helpdesk.", "utm.",
     "project.", "maintenance.", "quality.", "quality_control.",
-    "sale_subscription.", "industry_fsm.",
+    "sale_subscription.",
 )
 
 REF_ATTR_RE = re.compile(r"ref\(['\"]([^'\"]+)['\"]\)")
 
-# base_vat validates res.partner.vat with python-stdnum on create/write (the
-# account._check_vat inverse, verified base_vat/models/res_partner.py:104,106-164).
-# It is installed transitively via l10n_de, but NOT via l10n_ch - so an invalid
-# VAT only aborts the install for localizations that pull base_vat. The static
-# check below is therefore only applied when the manifest depends on one of them
+# VAT is validated by the Odoo core itself: in Odoo 20 `res.partner.vat` has
+# inverse='_inverse_vat' -> _check_vat() -> _run_vat_checks() in
+# odoo/addons/base/models/res_partner.py (verified res_partner.py:321,1388-1470);
+# the separate `base_vat` module no longer exists. An invalid DE/AT VAT therefore
+# aborts the install for every localization, not only for base_vat/l10n_de
 # (verified-patterns.md 4.19).
-BASE_VAT_LOCALIZATIONS = ("base_vat", "l10n_de")
 
 
 @dataclass
@@ -100,9 +99,10 @@ def validate_module(module_dir: Path) -> list[Finding]:
                                   f"(product.product._check_barcode_uniqueness would fail during installation)")
             )
 
-    if set(manifest.get("depends", [])) & set(BASE_VAT_LOCALIZATIONS):
-        for fname, root in trees.items():
-            _check_partner_vat(fname, root, findings)
+    # res.partner.vat is validated by the core for every localization (see the
+    # note at BASE_VAT removal above), so the check always applies.
+    for fname, root in trees.items():
+        _check_partner_vat(fname, root, findings)
 
     # product.template.recurring_invoice only exists with sale_subscription
     # (verified-patterns 4.25). Setting it without the app aborts the install.
@@ -311,7 +311,7 @@ def _check_project_task_stages(trees: dict[str, ET.Element], findings: list[Find
 def _check_partner_vat(fname: str, root: ET.Element, findings: list[Finding]) -> None:
     """Flag German/Austrian partner VAT numbers with an invalid check digit.
 
-    Only the two checksum algorithms verified against the Odoo 19.0 stdnum
+    Only the two checksum algorithms verified against the Odoo 20.0 stdnum
     dependency are implemented (DE = ISO 7064 Mod 11,10, AT = Luhn, see
     verified-patterns.md 4.19); other countries are left to the real install.
     """
@@ -327,15 +327,15 @@ def _check_partner_vat(fname: str, root: ET.Element, findings: list[Finding]) ->
             findings.append(Finding(
                 "error",
                 f"{fname}: record {rec.get('id', '?')} (res.partner) has VAT {vat!r} with an "
-                f"invalid USt-IdNr checksum - base_vat would reject it during installation "
-                f"(reference/verified-patterns.md 4.19)."
+                f"invalid USt-IdNr checksum - the core VAT check would reject it during "
+                f"installation (reference/verified-patterns.md 4.19)."
             ))
         elif upper.startswith("ATU") and not _is_valid_at_uid(vat):
             findings.append(Finding(
                 "error",
                 f"{fname}: record {rec.get('id', '?')} (res.partner) has VAT {vat!r} with an "
-                f"invalid Austrian UID checksum - base_vat would reject it during installation "
-                f"(reference/verified-patterns.md 4.19)."
+                f"invalid Austrian UID checksum - the core VAT check would reject it during "
+                f"installation (reference/verified-patterns.md 4.19)."
             ))
 
 

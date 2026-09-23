@@ -347,7 +347,7 @@ class ErpBlockTests(unittest.TestCase):
     def test_austrian_chart_template_pulls_l10n_at(self):
         # Same rationale as the German chart (verified-patterns.md 4.11): the
         # localization must be a dependency, otherwise _load() installs it
-        # mid-load. l10n_at also depends on base_vat (VAT checksum validation).
+        # mid-load.
         spec = self._erp_spec(company=Company(
             name="Test AG", street="Teststrasse 1", city="Teststadt", zip="1234",
             country_xmlid="base.at", chart_template="at",
@@ -626,7 +626,7 @@ class DemoUserTests(unittest.TestCase):
 
 
 class VatValidationTests(unittest.TestCase):
-    """Partner VAT checksum check active with base_vat (verified-patterns.md 4.19)."""
+    """Partner VAT checksum check - always active in Odoo 20 (verified-patterns.md 4.19)."""
 
     def _write_partner_module(self, tmp: str, depends: list[str], vat: str) -> Path:
         module_dir = Path(tmp) / "bt_demo_vat"
@@ -659,17 +659,18 @@ class VatValidationTests(unittest.TestCase):
             findings = validate_module(module_dir)
             self.assertTrue(any("4.19" in f.message for f in findings))
 
-    def test_invalid_german_vat_is_not_flagged_without_base_vat(self):
-        # l10n_ch does not pull base_vat, so musterhandel's VAT is not validated.
+    def test_invalid_german_vat_is_flagged_for_every_localization(self):
+        # In Odoo 20 the core validates res.partner.vat itself (base_vat is gone),
+        # so an invalid VAT is flagged regardless of the localization.
         with TemporaryDirectory() as tmp:
             module_dir = self._write_partner_module(tmp, ["account", "l10n_ch"], "DE118273456")
             findings = validate_module(module_dir)
-            self.assertFalse(any("4.19" in f.message for f in findings))
+            self.assertTrue(any("4.19" in f.message for f in findings))
 
 
 class AdjacentProcessTests(unittest.TestCase):
-    """Maintenance, quality control, subscriptions and field service
-    (verified-patterns.md 4.22-4.26)."""
+    """Maintenance, quality control and subscriptions
+    (verified-patterns.md 4.22-4.25)."""
 
     def _spec(self, **overrides) -> CustomerSpec:
         base = dict(
@@ -740,12 +741,12 @@ class AdjacentProcessTests(unittest.TestCase):
                                          product_xmlid="fin", partner_xmlid="p1")],
             subscriptions=[Subscription(xml_id="sub1", partner_xmlid="p1", plan="month",
                                         lines=[SubscriptionLine(product_xmlid="svc", qty=1.0)])],
-            projects=[Project(xml_id="prj_fsm", name="Einsätze", is_fsm=True)],
+            projects=[Project(xml_id="prj_fsm", name="Einsätze")],
             project_tasks=[ProjectTask(xml_id="ft1", name="Einsatz", project_xmlid="prj_fsm",
                                        partner_xmlid="p1")],
         )
         deps = depends(spec)
-        for app in ("maintenance", "quality_control", "sale_subscription", "industry_fsm"):
+        for app in ("maintenance", "quality_control", "sale_subscription"):
             self.assertIn(app, deps)
         with TemporaryDirectory() as tmp:
             module_dir = write_module_dir(spec, Path(tmp))
@@ -758,9 +759,6 @@ class AdjacentProcessTests(unittest.TestCase):
                          "quality_point_data.xml", "quality_check_data.xml",
                          "quality_alert_data.xml", "sale_order_subscription_data.xml"):
                 self.assertTrue((data_dir / name).exists(), f"{name} is missing")
-            project = (data_dir / "project_project_data.xml").read_text(encoding="utf-8")
-            self.assertIn("is_fsm", project)
-            self.assertNotIn("type_ids", project.split("prj_fsm")[1])
             products = (data_dir / "product_data.xml").read_text(encoding="utf-8")
             self.assertIn("recurring_invoice", products)
 
@@ -780,7 +778,6 @@ class AdjacentProcessTests(unittest.TestCase):
         self.assertTrue(spec.needs_maintenance)
         self.assertTrue(spec.needs_quality)
         self.assertTrue(spec.needs_subscriptions)
-        self.assertTrue(spec.needs_field_service)
         self.assertTrue(any(p.recurring_invoice for p in spec.products))
 
     def test_validate_flags_recurring_invoice_without_subscription(self):

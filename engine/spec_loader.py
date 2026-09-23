@@ -392,7 +392,6 @@ def load_project(d: dict[str, Any]) -> Project:
         date_start=_get(d, "date_start", where, default=None),
         date_end=_get(d, "date_end", where, default=None),
         privacy_visibility=_get(d, "privacy_visibility", where, default=None),
-        is_fsm=_get(d, "is_fsm", where, default=False),
     )
 
 
@@ -454,7 +453,6 @@ def load_maintenance_request(d: dict[str, Any]) -> MaintenanceRequest:
         stage_xmlid=_get(d, "stage_xmlid", where, default="maintenance.stage_0"),
         priority=_get(d, "priority", where, default=None),
         description=_get(d, "description", where, default=None),
-        request_date=_get(d, "request_date", where, default=None),
         schedule_date=_get(d, "schedule_date", where, default=None),
         close_date=_get(d, "close_date", where, default=None),
     )

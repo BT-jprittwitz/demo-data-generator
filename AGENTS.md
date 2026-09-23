@@ -9,14 +9,14 @@ Guide:
 
 ## Local test instance
 
-Installation smoke tests target the local Odoo 19 Enterprise (trial) instance in
-`../odoodemo-local` (Docker). This repo ships no Community setup. See
+Installation smoke tests target the local Odoo 20 Enterprise (trial) instance in
+`../odoodemo-local-20` (Docker). This repo ships no Community setup. See
 `skills/odoo-demo-data/reference/install-test-protocol.md`.
 
 ## Hard rules
 
 - **Never guess Odoo field names or behavior.** Verify against the
-  real Odoo 19.0 source before XML generation. Recipe:
+  real Odoo 20.0 source before XML generation. Recipe:
   `skills/odoo-demo-data/reference/verification-protocol.md`.
 - On installation error: read/request the **complete traceback** before attempting
   a second fix. No fix without a traceback.

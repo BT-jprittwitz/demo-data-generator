@@ -1,6 +1,6 @@
 """Data model for a customer demo data specification.
 
-Covers exclusively the Odoo-19.0 object types verified in verified-patterns.md
+Covers exclusively the Odoo-20.0 object types verified in verified-patterns.md
 section 4: res.company, res.partner, product.product, mrp.bom, sale.order.
 Deliberately NO further object types (see "demand-driven growth" in
 verified-patterns.md) - new archetypes first need their own verification against
@@ -208,9 +208,9 @@ class Bom:
 class ManufacturingOrder:
     """``mrp.production`` as a DRAFT manufacturing order.
 
-    Verified against odoo/odoo@19.0 (addons/mrp/models/mrp_production.py):
+    Verified against odoo/odoo@20.0 (addons/mrp/models/mrp_production.py):
     - required for create(): ``product_id``, ``product_qty`` (SQL Constraint
-      ``check (product_qty > 0)``), ``product_uom_id``, ``picking_type_id``,
+      ``check (product_qty > 0)``), ``uom_id``, ``picking_type_id``,
       ``location_src_id``, ``location_dest_id``, ``date_start``. The last four
       are computed from the company's warehouse manufacturing operation type
       (``stock.warehouse.manu_type_id``, added by mrp) - so a company warehouse
@@ -345,7 +345,7 @@ class PurchaseOrder:
     """purchase.order. State deliberately limited to draft/sent: with
     purchase_stock (auto_install as soon as purchase+stock are installed),
     state='purchase' creates real pickings (verified-patterns.md 4.10). name/date_order are
-    filled via default/sequence; product_uom_id is named that way in 19.0 (not
+    filled via default/sequence; uom_id is named that way in 20.0 (not
     product_uom); the tax field is called tax_ids (not taxes_id)."""
 
     xml_id: str
@@ -432,7 +432,7 @@ class ProjectTaskStage:
     is only valid for a project the stage is linked to (``project_ids`` /
     ``project.type_ids``); ``stage_find``/``_compute_stage_id`` otherwise override
     it. The builder therefore links every defined task stage to every project.
-    ``project.task.type`` has NO default records in 19.0 - the stages must be
+    ``project.task.type`` has NO default records in 20.0 - the stages must be
     created (unlike ``project.project.stage``, which ships as
     ``project.project_project_stage_0..3``).
     """
@@ -461,12 +461,6 @@ class Project:
     date_start: str | None = None
     date_end: str | None = None
     privacy_visibility: str | None = None
-    # project.project.is_fsm (added by `industry_fsm`, Enterprise): marks the
-    # project as a Field Service project. Verified: a FSM project requires a
-    # company_id (DB CHECK _company_id_required_for_fsm_project) and its task
-    # stages are auto-assigned by industry_fsm's create() override, so the
-    # renderer omits type_ids for FSM projects (verified-patterns 4.26).
-    is_fsm: bool = False
 
     def __post_init__(self) -> None:
         if self.privacy_visibility is not None and self.privacy_visibility not in VALID_PROJECT_PRIVACY:
@@ -559,7 +553,6 @@ class MaintenanceRequest:
     stage_xmlid: str = "maintenance.stage_0"
     priority: str | None = None
     description: str | None = None
-    request_date: str | None = None
     schedule_date: str | None = None
     close_date: str | None = None
 
@@ -678,7 +671,7 @@ class SubscriptionLine:
 class Subscription:
     """A recurring subscription (module ``sale_subscription``, Enterprise).
 
-    In Odoo 19 there is NO ``sale.subscription`` model: a subscription is a
+    In Odoo 20 there is NO ``sale.subscription`` model: a subscription is a
     ``sale.order`` with ``plan_id`` set (``is_subscription`` is computed from it).
     Verified: creating it in ``state='draft'`` is safe - no invoices/pickings are
     generated (invoices only come from the recurring cron/action), the Python
@@ -946,10 +939,6 @@ class CustomerSpec:
     @property
     def needs_subscriptions(self) -> bool:
         return bool(self.subscriptions)
-
-    @property
-    def needs_field_service(self) -> bool:
-        return any(project.is_fsm for project in self.projects)
 
     @property
     def needs_mrp(self) -> bool:

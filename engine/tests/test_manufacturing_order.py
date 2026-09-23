@@ -1,4 +1,4 @@
-"""Tests for the mrp.production building block (verified against odoo/odoo@19.0)."""
+"""Tests for the mrp.production building block (verified against odoo/odoo@20.0)."""
 from __future__ import annotations
 
 import unittest

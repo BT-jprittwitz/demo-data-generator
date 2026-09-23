@@ -1,6 +1,6 @@
-# Verified Odoo 19.0 patterns for demo data
+# Verified Odoo 20.0 patterns for demo data
 
-Each block is verified against the real 19.0 source. The numbering
+Each block is verified against the real 20.0 source. The numbering
 (4.1, 4.2, ...) is stable and is referenced by code comments and
 `engine/validate.py`.
 
@@ -10,9 +10,9 @@ Paths relative to the Odoo checkout:
 - Enterprise: `enterprise/<module>/...`
 - core/base: `odoo/odoo/addons/base/...`, ORM: `odoo/orm/...`
 
-Local reference checkout: `../odoodemo-local/repos/odoo/addons/` or
-`../odoodemo-local/repos/enterprise/`. Alternatively GitHub `github.com/odoo/odoo`
-branch `19.0`.
+Local reference checkout: `../odoodemo-local-20/repos/odoo/addons/` or
+`../odoodemo-local-20/repos/enterprise/`. Alternatively GitHub `github.com/odoo/odoo`
+branch `20.0`.
 
 **Basic rule:** `_load_records_create()` (`odoo/tools/convert.py`, `odoo/orm/models.py`)
 calls the **real ORM `create()`** including all overrides when loading real demo
@@ -81,13 +81,14 @@ demo data is invisible to the UI admin.
 
 **Fix:** `post_init_hook(env)` that adds `base.user_admin` to `company_ids` and
 sets it as the active company (see `engine/manifest.py`).
-Signature in 19.0: `def post_init_hook(env):` (`odoo/modules/loading.py`).
+Signature in 20.0: `def post_init_hook(env):` (`odoo/modules/loading.py`).
 Import: `from odoo.fields import Command` (not `from odoo import Command`).
 
 ## 4.6 Dead end: server actions for file access
 
-Odoo server actions (`safe_eval`) forbid `with` statements and block `open()`.
-For deployment files/logs use the container/CI console, not Odoo server actions.
+Odoo server actions (`safe_eval`) block `open()` and other untrusted
+builtins (`odoo/tools/safe_eval/runtime.py`, `TRUSTED_FUNCTIONS`). For deployment
+files/logs use the container/CI console, not Odoo server actions.
 
 ## 4.7 `standard_price` is `company_dependent` — needs company context
 
@@ -148,9 +149,9 @@ the POs. (2) Set `picking_type_id` explicitly:
        eval="obj(ref('warehouse_demo')).in_type_id.id"/>
 ```
 `state` stays `draft`/`sent` (state `purchase` creates pickings,
-`purchase_stock/models/purchase_order_line.py:94-99`). Field names 19.0:
-`product_uom_id` (not `product_uom`), `tax_ids` (not `taxes_id`),
-`purchase.order.line.date_planned`.
+`purchase_stock/models/purchase_order_line.py:94-99`). Field names 20.0:
+`uom_id` (renamed from `product_uom_id`; `purchase/models/purchase_order_line.py:49`,
+CHECK `:133`), `tax_ids` (not `taxes_id`), `purchase.order.line.date_planned`.
 
 ## 4.11 Chart of accounts for a new company (`account.chart.template`)
 
@@ -234,9 +235,10 @@ applies together with `mail_enterprise`; in a fresh Community DB it remains
 Translatable fields (`translate=True`, e.g. `product.template.name`,
 `description_sale`, `res.company.name`) are stored on insert by
 `convert_to_column_insert()` as `PsycopgJson({'en_US': value, record.env.lang or
-'en_US': value})` (`odoo/orm/fields_textual.py:92-98`). So the value is **always**
+'en_US': value})` (`odoo/orm/fields_textual.py:75-89`). So the value is **always**
 stored under `en_US` AND under the current `env.lang`; reads fall back to `en_US`
-via `get_translation_fallback_langs()` (`:229-237`). Consequence: setting
+via `StoredTranslations.fallback_langs()` (`odoo/tools/translate.py:490-497`).
+Consequence: setting
 `context="{'lang': 'de_CH'}"` on a `<record>` stores the demo text in the target
 language **without** losing the English fallback.
 
@@ -251,13 +253,14 @@ The `post_init_hook` activates the language (`res.lang.active = True`, cf.
 
 ## 4.17 `mrp.production` — a draft manufacturing order needs a warehouse
 
-Source: `odoo/odoo@19.0`, `addons/mrp/models/mrp_production.py`.
+Source: `odoo/odoo@20.0`, `addons/mrp/models/mrp_production.py`.
 
-- Required for `create()`: `product_id` (`check_company`), `product_qty` (SQL
-  Constraint `check (product_qty > 0)`), `product_uom_id`, `picking_type_id`,
+- Required for `create()`: `product_id` (`check_company`), `product_qty` (declarative
+  constraint `_qty_positive = models.Constraint('check (product_qty > 0)')`, `:313-316`),
+  `uom_id` (renamed from `product_uom_id`, `:121-123`), `picking_type_id`,
   `location_src_id`, `location_dest_id`, `date_start` (default now). The engine
   sets `product_id`/`bom_id`/`product_qty`/`company_id`/`picking_type_id` and
-  lets `product_uom_id` and the locations be computed from product/BOM/operation
+  lets `uom_id` and the locations be computed from product/BOM/operation
   type.
 - `state` is `compute='_compute_state', store=True, readonly=True` → **never set
   it**. A freshly created MO is `draft`; `create()` does not call
@@ -283,7 +286,7 @@ Goal: after the demo appointment the customer can log in without a manual user
 setup step. The `post_init_hook` therefore creates a `res.users` with
 `name` = company name and the same rights as `base.user_admin`.
 
-Verified against `odoo/odoo@19.0`, `odoo/addons/base/models/res_users.py`:
+Verified against `odoo/odoo@20.0`, `odoo/addons/base/models/res_users.py`:
 
 - **`_inherits = {'res.partner': 'partner_id'}`** (`:165`): setting `name` in
   `create()` creates the related partner automatically (`odoo/orm/models.py`
@@ -324,43 +327,45 @@ Verified against `odoo/odoo@19.0`, `odoo/addons/base/models/res_users.py`:
 Login/password default: `demo`/`demo` (`engine/manifest.py` `DEMO_USER_LOGIN`/
 `DEMO_USER_PASSWORD`).
 
-## 4.19 Partner `vat` is checksum-validated once `base_vat` is installed (real)
+## 4.19 Partner `vat` is always checksum-validated (real)
 
-Source: `odoo/odoo@19.0`, `addons/base_vat/models/res_partner.py` +
-`addons/account/models/partner.py`.
+Source: `odoo/odoo@20.0`, `odoo/addons/base/models/res_partner.py`. The separate
+`base_vat` module **no longer exists** in 20.0 - the VAT field and its checks moved
+into `base`.
 
-- `res.partner.vat` is `fields.Char(inverse="_inverse_vat", store=True)`
-  (`base_vat/models/res_partner.py:104`); the inverse calls `_check_vat()`
-  (`account/models/partner.py:849-854`) -> `_run_vat_checks(..., validation='error')`
-  (`base_vat/models/res_partner.py:106-164`). An invalid number raises
-  `ValidationError('The VAT number [..] does not seem to be valid..')` and aborts
-  the XML load (`_load_records_create` calls the real ORM `create()`).
-- Which checker runs comes from `_check_vat_number` (`:346-350`):
+- `res.partner.vat` is `fields.Char(inverse="_inverse_vat", ...)`
+  (`base/models/res_partner.py:321`); `country_id` also has
+  `inverse="_inverse_vat"` (`:357`). `_inverse_vat()` calls `_check_vat()` ->
+  `_run_vat_checks(..., validation='error')` (`:1388-1397`, `:1400-1470`). An
+  invalid number raises `ValidationError('The VAT number [..] does not seem to be
+  valid..')` and aborts the XML load (`_load_records_create` calls the real ORM
+  `create()`).
+- **Because the check lives in `base`, it runs for EVERY localization** - not only
+  when `base_vat`/`l10n_de` is installed. Invented Swiss/German VAT numbers that
+  previously installed fine with `l10n_ch` now abort the load. The context key
+  `no_vat_validation` switches the check off (`:1450-1453`), but that would only
+  silence, not fix, the demo data.
+- Which checker runs comes from `_check_vat_number` (`:1472-1477`):
   `check_vat_<cc>` if defined, else `stdnum.util.get_cc_module(cc, 'vat')`.
-  Germany overrides it (`:898-901`): `stdnum.de.vat.is_valid(vat) or
-  stdnum.de.stnr.is_valid(vat)`. So `DE` numbers must satisfy the ISO 7064
-  Mod 11,10 checksum (`stdnum/iso7064/mod_11_10.py`); a syntactically plausible
-  but checksum-invalid number (e.g. `DE118273456`) fails.
-- `base_vat` is only present when a localization pulls it in. `l10n_de`
-  depends on `base_vat` (`l10n_de/__manifest__.py:19-25`), `l10n_ch` does
-  **not** - which is why `bt_demo_musterhandel`'s invented Swiss/German VAT numbers
-  install fine but the same invented numbers abort a `de_skr03`/`de_skr04`
-  package. The context key `no_vat_validation` switches the check off
-  (`:146`), but that would only silence, not fix, the demo data.
+  - Germany (`check_vat_de`, `:1956-1959`): `stdnum.de.vat.is_valid(vat) or
+    stdnum.de.stnr.is_valid(vat)` (ISO 7064 Mod 11,10).
+  - Switzerland (`check_vat_ch`, `:1917-1944`): the regex
+    `E([0-9]{9}|-###.###.###)( )?(MWST|TVA|IVA)$` matches **after** the `CH` prefix
+    is stripped by `split_vat`; the number needs the trailing `MWST`/`TVA`/`IVA`
+    and the Mod-11 check digit (weights `5,4,3,2,7,6,5,4`).
 - **Fix:** use checksum-valid VAT numbers. Compute the check digit, do not guess:
   - DE: `stdnum.iso7064.mod_11_10.calc_check_digit('11827345')` -> `4` ->
     `DE118273454`.
   - AT: `stdnum.at.uid.calc_check_digit('U2233445')` -> `4` -> `ATU22334454`.
-  - CH (`CHE-142.028.625`) is unaffected here (no `base_vat`), but keep the
-    number plausible with the correct `CHE-xxx.xxx.xxx` format.
+  - CH: `CHE-142.028.625 MWST` (format `CHE-###.###.###` + Mod-11 digit + suffix).
 - `engine/validate.py` implements the DE (Mod 11,10) and AT (Luhn) checksum and
-  flags invalid partner VAT numbers as errors **only** when the manifest
-  depends on `base_vat`/`l10n_de`; `engine/tests/test_engine.py
-  (VatValidationTests)` pins both checks against the stdnum reference values.
+  flags invalid partner VAT numbers as errors for **every** manifest (no more
+  `base_vat`/`l10n_de` gating); `engine/tests/test_engine.py (VatValidationTests)`
+  pins both checks against the stdnum reference values.
 
 ## 4.20 Quotation templates `sale.order.template` ("Angebotsvorlagen")
 
-Source: `odoo/odoo@19.0`,
+Source: `odoo/odoo@20.0`,
 `addons/sale_management/models/sale_order_template.py`,
 `sale_order_template_line.py`. Module: `sale_management` (already a hard
 dependency of every generated module, `engine/manifest.py`).
@@ -387,17 +392,19 @@ dependency of every generated module, `engine/manifest.py`).
 - `_check_company_id` (`:86-124`) rejects products whose `company_id` is not
   accessible to the template company. Since products are created for the demo
   company, the template's `company_id` must be the demo company too.
-- `create()` runs `_update_product_translations()` (`:134-138`) - harmless for
-  our XML load (it only rewrites line names that match the product description).
+- A `create()` override that rewrote product translations is gone in 20.0
+  (`sale_order_template.py`); the line still needs
+  `product_id` + `product_uom_id`.
 - **Engine:** `QuotationTemplate`/`QuotationTemplateLine` in `engine/model.py`,
   renderer `records.quotation_template_record`, file
   `data/sale_order_template_data.xml`; section `quotation_templates` lives in
-  the `sales` bundle. `require_signature`/`require_payment` are computed from
-  the company (`:31-45`) and are therefore not set.
+  the `sales` bundle. `require_signature` is computed from the company and is not
+  set; `require_payment` was replaced by `prepayment_percent`
+  (`sale_order_template.py:49-51`) and is likewise left to the default.
 
 ## 4.21 Projects `project.project` / `project.task` / task stages
 
-Source: `odoo/odoo@19.0`, `addons/project/models/project_project.py`,
+Source: `odoo/odoo@20.0`, `addons/project/models/project_project.py`,
 `project_task.py`, `project_task_type.py`, `project_project_stage.py`;
 `addons/project/data/project_data.xml`, `data/project_demo.xml`. Module:
 `project`.
@@ -415,18 +422,22 @@ Source: `odoo/odoo@19.0`, `addons/project/models/project_project.py`,
   `company_id = False`, so they are usable by the demo company. `stage_id` has
   default `_default_stage_id` (lowest sequence, `:68-70`) and is group-gated
   (`groups="project.group_project_stages"`, `:158-159`).
-- **Task stages** (`project.task.type`): there are **NO default task stages** in
-  19.0 - they must be created. `name` required (`project_task_type.py`).
-  `project_ids` is the inverse of `project.project.type_ids` (same relation
-  `project_task_type_rel`).
+- **Task stages** (`project.task.type`): 20.0 now **auto-creates** default task
+  stages ("New"/"In Progress"/"Done"/"Cancelled") for a project created without
+  `type_ids` (`project_project.py:72-81`, `_default_type_ids`; `type_ids` default
+  `:129-130`). The generator still creates its own named stages and links them via
+  `project.type_ids`, so the project uses them instead of the auto-created ones.
+  `name` required (`project_task_type.py`). `project_ids` is the inverse of
+  `project.project.type_ids` (same relation `project_task_type_rel`).
 - **`project.task`** (`project_task.py`): only `name` required (`:152`).
   `project_id` (`:193`), `stage_id` (`:161-163`) and `company_id` (`:235`) are
   compute+store+`readonly=False`. `state` is compute+store+required with default
   `'01_in_progress'` (`:174`) - **never set it**.
 - **Landmine - a task's stage must be linked to its project.**
-  `_compute_stage_id` (`:688-695`) resets the stage when
-  `project not in task.stage_id.project_ids`; `stage_find` (`:974-993`) only
-  searches `project.task.type` where `project_ids = project.id`. Pattern
+  `_compute_stage_id` (`project_task.py:706-716`) resets the stage when
+  `project not in task.stage_id.project_ids`; the default stage lookup
+  `_get_default_task_stage` (`project_project.py:1153-1159`) only searches
+  `project.task.type` where `project_ids = project.id`. Pattern
   (`data/project_demo.xml`): create the task stages without `project_ids`, then
   link them through `project.project.type_ids` with
   `Command.link(ref('stage'))`.
@@ -449,7 +460,7 @@ Source: `odoo/odoo@19.0`, `addons/project/models/project_project.py`,
 
 ## 4.22 Maintenance `maintenance.equipment` / `maintenance.request` (Community)
 
-Source: `odoo/odoo@19.0`, `addons/maintenance/models/maintenance.py`,
+Source: `odoo/odoo@20.0`, `addons/maintenance/models/maintenance.py`,
 `addons/maintenance/data/maintenance_data.xml`. Module: `maintenance`
 (`depends: ['mail']`, `application=True`).
 
@@ -468,25 +479,28 @@ Source: `odoo/odoo@19.0`, `addons/maintenance/models/maintenance.py`,
   `_default_stage()` = first stage by order. `create()` clears `close_date` when
   the stage is not done and fills it (`fields.Date.today()`) when it is done.
   `priority` is `'0'..'3'`; `maintenance_type` is `corrective`/`preventive`.
+  **`request_date` no longer exists in 20.0** - use `schedule_date` (Datetime).
 - **`maintenance.team`** (`:404-455`): only `name` required; `company_id`
   defaults to `env.company`; `_inherit = ['mail.alias.mixin', 'mail.thread']`
   (the mail alias is auto-created).
 - **Default stages exist** (`data/maintenance_data.xml`, noupdate):
   `maintenance.stage_0` "New Request", `stage_1` "In Progress", `stage_3`
-  "Repaired" (`done`), `stage_4` "Scrap" (`done`). **No default team** exists -
-  the generator creates its own `maintenance.team` for the demo company
-  (`records.MAINTENANCE_TEAM_XMLID`), otherwise the request default would fall
-  back to another company's team (`check_company`).
+  "Repaired" (`done`), `stage_4` "Scrap" (`done`). 20.0 also ships a **default
+  team** `maintenance.equipment_team_maintenance` (`data/mail_message_subtype_data.xml:41`)
+  belonging to the main company. The generator still creates its own
+  `maintenance.team` for the demo company (`records.MAINTENANCE_TEAM_XMLID`),
+  otherwise the request default would fall back to another company's team
+  (`check_company`).
 - **Engine:** `MaintenanceEquipmentCategory`/`MaintenanceEquipment`/
   `MaintenanceRequest`, files `maintenance_team_data.xml` ->
   `maintenance_equipment_category_data.xml` -> `maintenance_equipment_data.xml`
   -> `maintenance_request_data.xml`, bundle `maintenance` (app `maintenance`,
-  requires `contacts`). `stock_maintenance`/`mrp_maintenance` auto-install with
-  stock/mrp but add no required fields.
+  requires `contacts`). `stock_maintenance` auto-installs with stock; the
+  `mrp_maintenance` module was removed in 20.0.
 
 ## 4.23 Quality apps and the auto-install chain (Enterprise)
 
-Source: `odoo/odoo@19.0` + `enterprise`, manifests of `quality`, `quality_control`,
+Source: `odoo/odoo@20.0` + `enterprise`, manifests of `quality`, `quality_control`,
 `quality_mrp`, `mrp_workorder`, `quality_mrp_workorder`.
 
 - `quality` ("Quality Base") `depends: ['stock']`, **no auto_install**.
@@ -515,8 +529,9 @@ Source: `enterprise/quality/models/quality.py`,
   `test_type_id` (default). `test_type_id` is a **m2o to
   `quality.point.test_type`** (not a Selection); the shipped `technical_name`
   values are `instructions`/`picture` (`quality`) and `passfail`/`measure`/
-  `spreadsheet` (`quality_control`). `measure_on` (required, default `product`)
-  is `operation`/`product`/`move_line`; **`move_line` raises a UserError with an
+  `spreadsheet` (`quality_control`). `measure_on` (required, default `product`;
+  defined in `quality_control/models/quality.py` in 20.0) is
+  `operation`/`product`/`move_line`; **`move_line` raises a UserError with an
   `mrp_operation` picking type** (`quality_mrp/models/quality.py:20-24`). For
   manufacturing, `picking_type_ids` must contain the warehouse
   `manu_type_id`. `_check_company_auto = True`.
@@ -528,9 +543,11 @@ Source: `enterprise/quality/models/quality.py`,
   `_check_allowed_product_ids_with_production`
   (`quality_mrp/models/quality.py:83-87`) requires `product_id` to be one of the
   production order's `move_finished_ids.product_id`.
-- **`quality.alert`** (`quality.py:305-386`): required `company_id`, `team_id`
+- **`quality.alert`** (`quality.py:318-377`): required `company_id`, `team_id`
   (defaults); `stage_id` defaults to the first shipped stage. `partner_id`
-  (Vendor) and `product_tmpl_id` are `check_company`.
+  (Vendor), `product_id` and `check_id` are `check_company`. 20.0 **removed
+  `product_tmpl_id`** from `quality.alert`; `production_id` is added by
+  `quality_mrp` (`quality_mrp/models/quality.py:123-127`).
 - **Default records** (`quality/data/quality_data.xml`, noupdate):
   `quality.quality_alert_team0` ("Main Quality Team", `company_id=False`),
   stages `quality.quality_alert_stage_0..3` ("New"/"Confirmed"/"Action
@@ -551,7 +568,7 @@ Source: `enterprise/quality/models/quality.py`,
 Source: `enterprise/sale_subscription/models/sale_order.py`,
 `data/sale_subscription_data.xml`, `data/sale_subscription_demo.xml`.
 
-- **There is NO `sale.subscription` model in 19.0.** A subscription is a
+- **There is NO `sale.subscription` model in 20.0.** A subscription is a
   `sale.order`; `is_subscription` is compute+store derived from `plan_id`.
 - `plan_id` (`sale_order.py:46-47`) is compute+store+`readonly=False`, so it can
   be set in XML. `subscription_state` (`:48-52`) is compute+store+readonly=False;
@@ -566,10 +583,10 @@ Source: `enterprise/sale_subscription/models/sale_order.py`,
   ('3_progress','4_paused')`. `_constraint_subscription_plan` (`:205-210`) +
   `_check_recurring_plan_mismatch` (`:189-203`): a **non-draft** order with a
   recurring line but no `plan_id` raises `UserError` (draft/cancel are exempt).
-- **Recurring lines:** `sale.order.line.recurring_invoice` is a *related*
-  (non-stored) field of `product.template.recurring_invoice`
-  (`sale_order_line.py:25`, `product_template.py:12-15`) - set the flag on the
-  **product**, never on the line.
+- **Recurring lines:** `sale.order.line.recurring_invoice` is compute+search
+  (non-stored) over `product.template.recurring_invoice`
+  (`sale_order_line.py:24,56-66`) - set the flag on the **product**, never on the
+  line.
 - **Default plans** ship as data (noupdate):
   `sale_subscription.subscription_plan_month` and `..._plan_year`.
 - **Engine:** `Subscription`/`SubscriptionLine`, file
@@ -579,32 +596,18 @@ Source: `enterprise/sale_subscription/models/sale_order.py`,
   dependency, and `model.py` rejects a recurring product on a non-draft
   `sale.order`/quotation.
 
-## 4.26 Field service `project.is_fsm` (Enterprise)
+## 4.26 Field service — obsolete in 20.0 (`industry_fsm`/`project.is_fsm` removed)
 
-Source: `enterprise/industry_fsm/models/project_project.py`,
-`project_task.py`, `res_company.py`, `data/fsm_data.xml`.
+Source: `odoo/odoo@20.0` + `enterprise` (20.0).
 
-- **FSM project:** `project.project.is_fsm` (Boolean, default False,
-  `project_project.py:10`). DB CHECK `_company_id_required_for_fsm_project`
-  (`:28-31`) requires a `company_id` when `is_fsm`. `create()` (`:84-99`) sets
-  `type_ids` via `vals.setdefault(...)` - if the caller passes `type_ids` it is
-  kept, otherwise the existing FSM project's stages (or the default FSM stages
-  New/Planned/In Progress/Done/Cancelled) are used. The generator therefore
-  **omits `type_ids` for FSM projects** and lets the app assign them.
-- **FSM task:** `project.task.is_fsm` is a **related** field of
-  `project_id.is_fsm` (`project_task.py:37`) - never set it; assign
-  `project_id` to an FSM project. There is **no `fsm_mode` field** (`fsm_mode` is
-  a context key). `state` is compute+store+readonly=False with default
-  `01_in_progress` and must not be set.
-- **Per-company project:** `res.company.create()` auto-creates an FSM project
-  for every new company (`res_company.py:22-26`, no xmlid). The shipped
-  `industry_fsm.fsm_project` belongs to `base.main_company`. The generator can
-  add its own named FSM project (a fresh demo company already has one).
-- **Auto-install:** `industry_fsm` depends on `project_enterprise`,
-  `timesheet_grid`, `base_geolocalize`; `industry_fsm_sale`/`industry_fsm_stock`
-  auto-install with `sale_management`/`stock`. `industry_fsm_report`
-  (worksheets) only with `web_studio`; worksheets are optional.
-- **Engine:** `Project.is_fsm`; the `field_service` bundle has **no spec
-  section** (it only selects the app) and requires `project`; `manifest.py` adds
-  `industry_fsm` when any project has `is_fsm`. FSM tasks are ordinary
-  `project_tasks` that omit `stage_xmlid`.
+- **`project.project.is_fsm` no longer exists** and there is no `industry_fsm`
+  module in 20.0 (neither in the Community core nor in Enterprise). Field Service
+  was re-implemented on top of `planning`:
+  `enterprise/planning_field_service/__manifest__.py:8-13` depends on `planning`,
+  `web_map`, `base_geolocalize`, `portal_rating` and models interventions as
+  `planning.slot` (sibling modules `planning_field_service_sale_stock`,
+  `..._repair`, `..._worksheet`, ...).
+- **Consequence for the generator:** the `field_service` bundle and the
+  `Project.is_fsm` spec field were removed. Generating Field Service demo data
+  again requires a new `planning.slot` building block (demand-driven growth) - not
+  started yet.

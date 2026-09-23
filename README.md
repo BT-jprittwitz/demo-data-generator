@@ -1,6 +1,6 @@
 # Odoo Demo-Data Generator
 
-Generator engine that builds an installable Odoo 19.0 demo-data module (ZIP)
+Generator engine that builds an installable Odoo 20.0 demo-data module (ZIP)
 from a customer specification (JSON).
 
 - Workflow, verified patterns and protocols:
@@ -103,7 +103,7 @@ engine/
   spec/spec.schema.json  generated JSON schema of the customer specification
   tests/           engine tests (no Odoo needed)
   docker/          installation smoke-test harness against the local Enterprise
-                   instance ../odoodemo-local (see its README)
+                   instance ../odoodemo-local-20 (see its README)
 skills/odoo-demo-data/   skill: workflow + reference (verified-patterns, spec-format, ...)
 opencode.json/.opencode/ opencode adapter (registers skills/, /new-demo command)
 examples/                anonymized example specifications (real specs are gitignored)
@@ -116,5 +116,5 @@ examples/reference/      historical reference modules (no longer a template)
 `engine/validate.py` only checks structure (well-formedness, xmlid references,
 manifest consistency and the known landmines from
 `skills/odoo-demo-data/reference/verified-patterns.md`). It is **no** substitute
-for a real installation against an Odoo 19.0 kernel - for that see
+for a real installation against an Odoo 20.0 kernel - for that see
 `skills/odoo-demo-data/reference/install-test-protocol.md`.

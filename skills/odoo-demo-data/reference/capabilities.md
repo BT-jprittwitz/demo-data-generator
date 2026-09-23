@@ -31,7 +31,7 @@ ask what *else* matters. Examples:
 - Recurring revenue -> subscriptions.
 
 If the reasoning needs an app we have **no bundle** for, say so explicitly and
-treat it as a demand signal (verify against the Odoo 19.0 source, then build
+treat it as a demand signal (verify against the Odoo 20.0 source, then build
 the bundle) - do not fake data for it.
 
 ## Catalog
@@ -52,4 +52,3 @@ the bundle) - do not fake data for it.
 | `maintenance` | `maintenance_equipment_categories`, `maintenance_equipment`, `maintenance_requests` | `maintenance` | `contacts` | the company maintains equipment/assets with preventive or corrective maintenance requests (Community app). |
 | `quality` | `quality_points`, `quality_checks`, `quality_alerts` | `quality_control` | `mrp`, `contacts` | incoming/outgoing/in-process quality control (control points, checks, alerts) for regulated or certified production (Enterprise). |
 | `subscriptions` | `subscriptions` | `sale_subscription` | `sales` | recurring revenue (service/maintenance contracts) invoiced periodically (Enterprise; needs recurring products). |
-| `field_service` | - | `industry_fsm` | `project` | on-site interventions are planned and executed by technicians (Enterprise; marks projects as FSM via project.is_fsm). |

@@ -574,8 +574,7 @@
     },
     {
       "xml_id": "project_field_service",
-      "name": "Kundendienst-Einsätze (Field Service)",
-      "is_fsm": true,
+      "name": "Kundendienst-Einsätze",
       "privacy_visibility": "employees",
       "description": "Planung und Abwicklung der Vor-Ort-Einsätze von Inbetriebnahme, Wartung und Störungsdienst durch die Servicetechniker."
     }
@@ -653,7 +652,6 @@
       "maintenance_type": "corrective",
       "stage_xmlid": "maintenance.stage_1",
       "priority": "3",
-      "request_date": "2026-09-13",
       "schedule_date": "2026-09-14 08:00:00",
       "description": "Anlage hat mit Fehlermeldung 3.4 abgeschaltet; Kühlmittelkreislauf und Temperatursensor werden durch den Servicetechniker geprüft."
     },
@@ -664,7 +662,6 @@
       "maintenance_type": "preventive",
       "stage_xmlid": "maintenance.stage_0",
       "priority": "2",
-      "request_date": "2026-09-10",
       "schedule_date": "2026-09-22 09:00:00",
       "description": "Turnusmäßige Wartung inklusive Ölwechsel, Filterwechsel und Ölanalyse."
     },
@@ -675,7 +672,6 @@
       "maintenance_type": "preventive",
       "stage_xmlid": "maintenance.stage_3",
       "priority": "1",
-      "request_date": "2026-09-08",
       "close_date": "2026-09-12",
       "description": "Ölwechsel durchgeführt und Ölprobe zur Analyse an das Labor gesandt."
     },
@@ -686,7 +682,6 @@
       "maintenance_type": "preventive",
       "stage_xmlid": "maintenance.stage_3",
       "priority": "0",
-      "request_date": "2026-08-25",
       "close_date": "2026-08-29",
       "description": "Jährliche Kalibrierung der Druck- und Temperaturmesstechnik am Prüfstand."
     }
