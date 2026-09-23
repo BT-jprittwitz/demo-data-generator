@@ -25,12 +25,21 @@ Installation smoke tests target the local Odoo 19 Enterprise (trial) instance in
 - **No fixed industry profiles/archetypes.** Compose each module per customer
   from the verified building blocks; there is no catalog of canned industry
   profiles. Principles: [ROADMAP.md](ROADMAP.md).
-- **Committed examples are anonymized.** Real customer specs must not be
-  committed (they contain customer names, addresses, VAT ids). Committed
+- **Committed examples are anonymized (public repo).** Real customer specs must
+  not be committed (they contain customer names, addresses, VAT ids). Committed
   `examples/*.json` use a fictional identity (company name starts with `Muster`,
   e.g. "Muster Foerdertechnik AG"); enforced by
-  `engine/tests/test_examples_anonymized.py`. Keep a real spec untracked or in a
-  gitignored directory and commit only an anonymized copy.
+  `engine/tests/test_examples_anonymized.py`. `.gitignore` keeps every
+  `examples/*.json` untracked except `examples/muster_*.json`, and
+  `.githooks/pre-commit` runs the test on commits touching `examples/`. Keep a
+  real spec untracked/gitignored and commit only an anonymized copy named
+  `examples/muster_*.json`. Enable the hook once per clone:
+  `git config core.hooksPath .githooks`.
+- **Never mention a real customer/company name anywhere in the repo** - not in
+  docs, commit messages, tests or file/module names - even if it is publicly
+  findable (e.g. via zefix.ch). Use the fictional `Muster...` identity or a
+  generic placeholder (`bt_demo_<topic>`) instead. This applies to new content;
+  already-committed history is not rewritten.
 - Language of docs, skills and code comments: English. Language of the generated
   demo data: derived from the example company's country, unless the spec sets
   `language` explicitly (see `skills/odoo-demo-data/reference/verified-patterns.md`

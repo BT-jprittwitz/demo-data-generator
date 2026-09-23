@@ -2,3 +2,10 @@ output/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Public repo: real customer specifications must never be published.
+# Only anonymized examples with a fictional identity (company name starts with
+# "Muster") may be tracked. Everything else under examples/ stays local.
+# See AGENTS.md and engine/tests/test_examples_anonymized.py.
+examples/*.json
+!examples/muster_*.json

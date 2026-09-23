@@ -92,6 +92,23 @@ data where possible) and keys **all** demo data to it:
     signal: the `appointment` app (booking of treatment slots) has no bundle yet.
     Verified against Enterprise 19.0 including the spec-aware Postgres assertions.
 
+11. `bt_demo_gastechnik` — Austrian gas-technology manufacturer (Korneuburg, Lower
+    Austria): components and complete plants for the energy transition (landfill
+    gas/biogas plants, gas flares, gas compressors, pressure booster stations,
+    membrane-based biogas upgrading). First `at`/`l10n_at` chart of accounts
+    (Einheitskontenrahmen) and, with it, the first Austrian VAT numbers
+    (checksum-valid `ATU...`, `base_vat` pulled in by `l10n_at`). Bundles: `mrp`,
+    `purchase`, `sales`, `crm`, `project`, `field_service`, `accounting`,
+    `helpdesk`, `maintenance`, `quality`, `subscriptions`. Component/finished-goods
+    catalog, 6 BOMs, draft manufacturing orders, procurement, stock, CRM pipeline,
+    turnkey-plant delivery projects (incl. a Field Service project), posted
+    customer/vendor invoices, after-sales tickets, delivered-plant maintenance,
+    quality control points/checks/alerts (gas-tightness, electrical safety,
+    membrane performance) and recurring service contracts. New engine capability:
+    `at` -> `l10n_at` in `CHART_TEMPLATE_MODULE` (engine/manifest.py, same
+    verified pattern as `ch`/`de_*`, verified-patterns.md 4.11). Verified against
+    Enterprise 19.0 including the spec-aware Postgres assertions.
+
 ## Reference material
 
 The structural model was a colleague's module (Felix Schubert) for

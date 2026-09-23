@@ -289,6 +289,16 @@ class ErpBlockTests(unittest.TestCase):
             ))
             self.assertIn("l10n_de", depends(spec), template)
 
+    def test_austrian_chart_template_pulls_l10n_at(self):
+        # Same rationale as the German chart (verified-patterns.md 4.11): the
+        # localization must be a dependency, otherwise _load() installs it
+        # mid-load. l10n_at also depends on base_vat (VAT checksum validation).
+        spec = self._erp_spec(company=Company(
+            name="Test AG", street="Teststrasse 1", city="Teststadt", zip="1234",
+            country_xmlid="base.at", chart_template="at",
+        ))
+        self.assertIn("l10n_at", depends(spec))
+
     def test_validate_flags_unsafe_purchase_state(self):
         with TemporaryDirectory() as tmp:
             module_dir = Path(tmp) / "bt_demo_broken_po"

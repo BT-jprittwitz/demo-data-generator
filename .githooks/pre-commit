@@ -1,0 +1,35 @@
+#!/bin/sh
+# Pre-commit guard for a public repository: never commit real customer data.
+#
+# Committed example specifications must use a fictional identity (company name
+# starts with "Muster"); real customer specs stay untracked/gitignored and are
+# committed only as an anonymized copy. The rule lives in exactly one place:
+# engine/tests/test_examples_anonymized.py (see AGENTS.md).
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Files staged for this commit.
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+
+# The guard only matters when an example spec (or anything under examples/) is
+# part of the commit; skip the test run otherwise.
+case "$staged" in
+    *examples/*) ;;
+    *) exit 0 ;;
+esac
+
+if python3 -m unittest engine.tests.test_examples_anonymized >/dev/null 2>&1; then
+    exit 0
+fi
+
+echo "Commit blocked: non-anonymized example specification." >&2
+python3 -m unittest engine.tests.test_examples_anonymized || true
+echo "" >&2
+echo "Real customer specs must not be committed (public repo). Keep the real" >&2
+echo "spec untracked/gitignored and commit an anonymized copy named" >&2
+echo "examples/muster_*.json with a fictional company name (see AGENTS.md)." >&2
+exit 1

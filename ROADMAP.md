@@ -43,7 +43,8 @@ the module - minimal friction.
   `alert`), subscriptions (`sale.order` + `plan_id`) and field service
   (`project.is_fsm`).
   Reference specs: manufacturing, multi-app/Enterprise, German IT system house
-  `de_skr04`, German CHP manufacturer `Musterkraft`.
+  `de_skr04`, German CHP manufacturer `Musterkraft`, Austrian gas-technology
+  manufacturer `bt_demo_gastechnik` (first `l10n_at` chart).
 - Static validation of the known landmines + tests; real
   installation procedure against Enterprise 19.0 documented.
 - `engine/docker/test_install.py`: automated installation smoke test against the
@@ -58,12 +59,36 @@ the module - minimal friction.
 
 ## Open
 
-- **Odoo 20 support (`20.0` branch):** stand up the install smoke-test harness
-  against a local Odoo 20 Enterprise instance (`../odoodemo-local-20`, parallel to
-  the 19.0 instance), then verify/adjust the Odoo 19.0 patterns against the Odoo
-  20 source (`skills/odoo-demo-data/reference/verification-protocol.md`) and run
-  the reference specs through the harness. Trigger: Odoo 20 availability + first
+- **Odoo 20 support (`20.0` branch) - paused, waiting for the Enterprise 20.0
+  source:** stand up the install smoke-test harness against a local Odoo 20
+  Enterprise instance (`../odoodemo-local-20`, parallel to the 19.0 instance),
+  then verify/adjust the Odoo 19.0 patterns against the Odoo 20 source
+  (`skills/odoo-demo-data/reference/verification-protocol.md`) and run the
+  reference specs through the harness. Trigger: Odoo 20 availability + first
   customer on 20.
+  - **Blocker (2026-09):** the migration must target **Enterprise only** - the
+    harness instance mounts Enterprise modules, never Community. `odoo/odoo@20.0`
+    (`github.com/odoo/odoo/tree/20.0`) is the **Community** repo: it contains no
+    `helpdesk`/`quality`/`sale_subscription`/`industry_fsm`/`account_accountant`/
+    `project_enterprise`. The Enterprise 20.0 source (`github.com/odoo/enterprise`,
+    and `brain-tec/enterprise`) is private and was not accessible with the
+    available credentials (HTTP 404; SSH port 22 blocked). Do not start the
+    harness migration until Enterprise 20.0 is reachable and mounted into
+    `../odoodemo-local-20`.
+  - **Verified Community-core deltas against `odoo/odoo@20.0`** (valid as
+    prep work, since Enterprise builds on the core; Enterprise patterns 4.14,
+    4.23/4.24, 4.25, 4.26 remain unverified without the Enterprise source):
+    - `base_vat` module is gone; `res.partner.vat` + `_inverse_vat`/
+      `_run_vat_checks`/`check_vat` now live in
+      `odoo/addons/base/models/res_partner.py`. VAT is now validated **always**,
+      not only with `base_vat`/`l10n_de` - this changes verified-pattern 4.19 and
+      the `base_vat`/`l10n_de` gating in `engine/validate.py`.
+    - `post_init_hook(env)` unchanged (`odoo/modules/loading.py`); SQL constraints
+      moved to the declarative `models.Constraint(...)` class; `account.move`
+      posted-create guard + `action_post` and `chart_template.try_loading`
+      unchanged; `maintenance.request.maintenance_team_id`,
+      `product.template.is_storable`/`standard_price`, `stock.quant.quantity`,
+      `project` stages/`project_ids` remain.
 - **Web research automation:** Automatically derive industry/size/business model
   from a customer name and, from it, the required apps, process chain and object
   types (per-customer composition, no fixed verticals - see the principles above).

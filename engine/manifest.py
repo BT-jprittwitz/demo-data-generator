@@ -28,6 +28,7 @@ CHART_TEMPLATE_MODULE = {
     "ch": "l10n_ch",
     "de_skr03": "l10n_de",
     "de_skr04": "l10n_de",
+    "at": "l10n_at",
 }
 
 
@@ -116,7 +117,7 @@ def depends(spec: CustomerSpec) -> list[str]:
         # as "Invoicing" in the UI (verified-patterns.md 4.15).
         if spec.accounting_app == "full":
             deps.append("account_accountant")
-    # l10n_ch/l10n_de explicitly as a dependency so that
+    # l10n_ch/l10n_de/l10n_at explicitly as a dependency so that
     # account.chart.template._load() does not have to install the module during
     # data loading (which would reset the transaction/registry mid-load, see
     # account/models/chart_template.py). See CHART_TEMPLATE_MODULE.

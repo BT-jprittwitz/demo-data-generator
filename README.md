@@ -9,6 +9,22 @@ from a customer specification (JSON).
 
 Pure Python stdlib, no dependencies, no `pip install` needed.
 
+## Setup (once per clone)
+
+This is a **public** repository. Real customer specifications (names, addresses,
+VAT ids) must never be published. Enable the guard that blocks them at commit
+time:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+`.gitignore` additionally keeps every `examples/*.json` untracked except the
+anonymized `examples/muster_*.json`; the pre-commit hook runs
+`engine/tests/test_examples_anonymized.py` on any commit touching `examples/`.
+Keep a real spec untracked and commit only an anonymized copy with a fictional
+`Muster...` company name (see [AGENTS.md](AGENTS.md)).
+
 ## Usage
 
 ```bash
@@ -40,6 +56,10 @@ python3 -m engine.cli new --with mrp,sales --name "Muster AG" --country ch --out
 ```
 
 ## Writing a new customer specification
+
+For a **real customer**, write the spec to any path under `examples/` (it is
+gitignored automatically) and commit only an anonymized copy named
+`examples/muster_<topic>.json` with a fictional company name.
 
 Copy `examples/muster_foerdertechnik.json` (manufacturing customer) or
 `examples/muster_handel.json` (multi-app/Enterprise) as a template. Covers the verified
@@ -82,8 +102,9 @@ engine/
                    instance ../odoodemo-local (see its README)
 skills/odoo-demo-data/   skill: workflow + reference (verified-patterns, spec-format, ...)
 opencode.json/.opencode/ opencode adapter (registers skills/, /new-demo command)
-examples/                example specifications
+examples/                anonymized example specifications (real specs are gitignored)
 examples/reference/      historical reference modules (no longer a template)
+.githooks/pre-commit     blocks committing non-anonymized specs (enable: see Setup)
 ```
 
 ## Known limitation

@@ -171,7 +171,8 @@ the POs. (2) Set `picking_type_id` explicitly:
 ```
 `try_loading(template_code, company, install_demo=False, force_create=True)`
 (`account/models/chart_template.py:140`). `_load` requires the system user
-(`:183-184`). Template codes: e.g. `ch` (l10n_ch), `generic_coa`.
+(`:183-184`). Template codes: e.g. `ch` (l10n_ch), `de_skr04` (l10n_de), `at` (l10n_at),
+`generic_coa`.
 **Important:** declare the localization (e.g. `l10n_ch`) as a module dependency,
 otherwise `_load` installs it in the middle of loading and resets the
 transaction/registry (`chart_template.py:191-195`). Accounts/journals have
