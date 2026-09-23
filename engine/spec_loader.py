@@ -14,6 +14,7 @@ from .model import (
     BomLine,
     Company,
     CrmLead,
+    CustomerProfile,
     CustomerSpec,
     HelpdeskTicket,
     Invoice,
@@ -69,6 +70,64 @@ def _reject_unknown(d: dict[str, Any], cls, where: str) -> None:
 def _checked(d: dict[str, Any], cls, where: str) -> dict[str, Any]:
     _reject_unknown(d, cls, where)
     return d
+
+
+def _as_records(value: Any, where: str) -> list[dict[str, Any]]:
+    """Normalise a record list to a list of dicts.
+
+    Accepts either the verbose form (a list of objects) or a **compact table**:
+    a list whose first element is a header row of field names and whose remaining
+    elements are value rows of equal length, e.g.
+
+        "partners": [
+          ["xml_id", "name", "country_xmlid", "street", "city", "zip"],
+          ["p_c1", "Autohaus Vogel GmbH", "base.de", "Karlstrasse 100", "Karlsruhe", "76133"]
+        ]
+
+    The table form removes the repeated keys (a large token saving for the LLM
+    author) without changing the parsed result. Values keep their JSON type.
+    """
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise SpecError(
+            f"{where}: expected a list of records (objects, or a table = header "
+            f"row + data rows), got {type(value).__name__}."
+        )
+    if not value:
+        return []
+    first = value[0]
+    if isinstance(first, dict):
+        return value
+    if isinstance(first, list):
+        header = first
+        if not all(isinstance(h, str) for h in header):
+            raise SpecError(f"{where}: table header must be a list of field-name strings.")
+        records: list[dict[str, Any]] = []
+        for index, row in enumerate(value[1:], start=1):
+            if not isinstance(row, list):
+                raise SpecError(f"{where}: table row {index} is not a list.")
+            if len(row) != len(header):
+                raise SpecError(
+                    f"{where}: table row {index} has {len(row)} value(s), but the "
+                    f"header has {len(header)} column(s)."
+                )
+            records.append(dict(zip(header, row)))
+        return records
+    raise SpecError(
+        f"{where}: records must be objects; the first element is {type(first).__name__}."
+    )
+
+
+def load_customer_profile(d: dict[str, Any]) -> CustomerProfile:
+    _reject_unknown(d, CustomerProfile, "customer_profile")
+    return CustomerProfile(
+        industry=_get(d, "industry", "customer_profile", default=None),
+        business_model=_get(d, "business_model", "customer_profile", default=None),
+        product_domains=_get(d, "product_domains", "customer_profile", default=[]),
+        customer_segments=_get(d, "customer_segments", "customer_profile", default=[]),
+        region=_get(d, "region", "customer_profile", default=None),
+    )
 
 
 def load_module(d: dict[str, Any]) -> Module:
@@ -140,7 +199,7 @@ def load_bom(d: dict[str, Any]) -> Bom:
     xml_id = _get(d, "xml_id", "bom", required=True)
     where = f"bom {xml_id}"
     _reject_unknown(d, Bom, where)
-    lines_raw = _get(d, "lines", where, required=True)
+    lines_raw = _as_records(_get(d, "lines", where, required=True), f"{where} lines")
     lines = [
         BomLine(
             product_xmlid=_get(ld, "product_xmlid", f"{where} line", required=True),
@@ -175,7 +234,7 @@ def load_sale_order(d: dict[str, Any]) -> SaleOrder:
     xml_id = _get(d, "xml_id", "sale_order", required=True)
     where = f"sale_order {xml_id}"
     _reject_unknown(d, SaleOrder, where)
-    lines_raw = _get(d, "lines", where, required=True)
+    lines_raw = _as_records(_get(d, "lines", where, required=True), f"{where} lines")
     lines = [
         SaleOrderLine(
             product_xmlid=_get(ld, "product_xmlid", f"{where} line", required=True),
@@ -197,7 +256,7 @@ def load_quotation_template(d: dict[str, Any]) -> QuotationTemplate:
     xml_id = _get(d, "xml_id", "quotation_template", required=True)
     where = f"quotation_template {xml_id}"
     _reject_unknown(d, QuotationTemplate, where)
-    lines_raw = _get(d, "lines", where, required=True)
+    lines_raw = _as_records(_get(d, "lines", where, required=True), f"{where} lines")
     lines = [
         QuotationTemplateLine(
             product_xmlid=_get(ld, "product_xmlid", f"{where} line", required=True),
@@ -240,7 +299,7 @@ def load_purchase_order(d: dict[str, Any]) -> PurchaseOrder:
     xml_id = _get(d, "xml_id", "purchase_order", required=True)
     where = f"purchase_order {xml_id}"
     _reject_unknown(d, PurchaseOrder, where)
-    lines_raw = _get(d, "lines", where, required=True)
+    lines_raw = _as_records(_get(d, "lines", where, required=True), f"{where} lines")
     lines = [
         PurchaseOrderLine(
             product_xmlid=_get(ld, "product_xmlid", f"{where} line", required=True),
@@ -274,7 +333,7 @@ def load_invoice(d: dict[str, Any]) -> Invoice:
     xml_id = _get(d, "xml_id", "invoice", required=True)
     where = f"invoice {xml_id}"
     _reject_unknown(d, Invoice, where)
-    lines_raw = _get(d, "lines", where, required=True)
+    lines_raw = _as_records(_get(d, "lines", where, required=True), f"{where} lines")
     lines = [
         InvoiceLine(
             product_xmlid=_get(ld, "product_xmlid", f"{where} line", required=True),
@@ -450,7 +509,7 @@ def load_subscription(d: dict[str, Any]) -> Subscription:
     xml_id = _get(d, "xml_id", "subscription", required=True)
     where = f"subscription {xml_id}"
     _reject_unknown(d, Subscription, where)
-    lines_raw = _get(d, "lines", where, required=True)
+    lines_raw = _as_records(_get(d, "lines", where, required=True), f"{where} lines")
     lines = [
         SubscriptionLine(
             product_xmlid=_get(ld, "product_xmlid", f"{where} line", required=True),
@@ -476,36 +535,45 @@ def load_spec(d: dict[str, Any]) -> CustomerSpec:
     if "company" not in d:
         raise SpecError("spec: required field 'company' is missing.")
     quotation_raw = d.get("quotation")
+
+    def rows(key: str) -> list[dict[str, Any]]:
+        return _as_records(d.get(key, []), key)
+
     return CustomerSpec(
         module=load_module(d["module"]),
         company=load_company(d["company"]),
-        partners=[load_partner(p) for p in d.get("partners", [])],
-        products=[load_product(p) for p in d.get("products", [])],
-        boms=[load_bom(b) for b in d.get("boms", [])],
-        manufacturing_orders=[load_manufacturing_order(x) for x in d.get("manufacturing_orders", [])],
+        partners=[load_partner(p) for p in rows("partners")],
+        products=[load_product(p) for p in rows("products")],
+        boms=[load_bom(b) for b in rows("boms")],
+        manufacturing_orders=[load_manufacturing_order(x) for x in rows("manufacturing_orders")],
         quotation=load_sale_order(quotation_raw) if quotation_raw else None,
-        example_orders=[load_sale_order(o) for o in d.get("example_orders", [])],
-        crm_leads=[load_crm_lead(x) for x in d.get("crm_leads", [])],
-        purchase_orders=[load_purchase_order(x) for x in d.get("purchase_orders", [])],
-        stock_quants=[load_stock_quant(x) for x in d.get("stock_quants", [])],
-        invoices=[load_invoice(x) for x in d.get("invoices", [])],
-        helpdesk_tickets=[load_helpdesk_ticket(x) for x in d.get("helpdesk_tickets", [])],
-        quotation_templates=[load_quotation_template(x) for x in d.get("quotation_templates", [])],
-        projects=[load_project(x) for x in d.get("projects", [])],
-        project_task_stages=[load_project_stage(x) for x in d.get("project_task_stages", [])],
-        project_tasks=[load_project_task(x) for x in d.get("project_tasks", [])],
+        example_orders=[load_sale_order(o) for o in rows("example_orders")],
+        crm_leads=[load_crm_lead(x) for x in rows("crm_leads")],
+        purchase_orders=[load_purchase_order(x) for x in rows("purchase_orders")],
+        stock_quants=[load_stock_quant(x) for x in rows("stock_quants")],
+        invoices=[load_invoice(x) for x in rows("invoices")],
+        helpdesk_tickets=[load_helpdesk_ticket(x) for x in rows("helpdesk_tickets")],
+        quotation_templates=[load_quotation_template(x) for x in rows("quotation_templates")],
+        projects=[load_project(x) for x in rows("projects")],
+        project_task_stages=[load_project_stage(x) for x in rows("project_task_stages")],
+        project_tasks=[load_project_task(x) for x in rows("project_tasks")],
         maintenance_equipment_categories=[
             load_maintenance_equipment_category(x)
-            for x in d.get("maintenance_equipment_categories", [])
+            for x in rows("maintenance_equipment_categories")
         ],
-        maintenance_equipment=[load_maintenance_equipment(x) for x in d.get("maintenance_equipment", [])],
-        maintenance_requests=[load_maintenance_request(x) for x in d.get("maintenance_requests", [])],
-        quality_points=[load_quality_point(x) for x in d.get("quality_points", [])],
-        quality_checks=[load_quality_check(x) for x in d.get("quality_checks", [])],
-        quality_alerts=[load_quality_alert(x) for x in d.get("quality_alerts", [])],
-        subscriptions=[load_subscription(x) for x in d.get("subscriptions", [])],
+        maintenance_equipment=[load_maintenance_equipment(x) for x in rows("maintenance_equipment")],
+        maintenance_requests=[load_maintenance_request(x) for x in rows("maintenance_requests")],
+        quality_points=[load_quality_point(x) for x in rows("quality_points")],
+        quality_checks=[load_quality_check(x) for x in rows("quality_checks")],
+        quality_alerts=[load_quality_alert(x) for x in rows("quality_alerts")],
+        subscriptions=[load_subscription(x) for x in rows("subscriptions")],
         language=_get(d, "language", "spec", default=None),
         crm_team_name=_get(d, "crm_team_name", "spec", default=None),
         helpdesk_team_name=_get(d, "helpdesk_team_name", "spec", default=None),
         accounting_app=_get(d, "accounting_app", "spec", default="full"),
+        customer_profile=(
+            load_customer_profile(d["customer_profile"])
+            if d.get("customer_profile")
+            else None
+        ),
     )

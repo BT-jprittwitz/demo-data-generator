@@ -19,6 +19,7 @@ Foreign xmlids (e.g. `base.ch`, `crm.stage_lead1`) are emitted 1:1 as `ref`.
   "crm_team_name": "Vertrieb",    // optional; language-dependent default if absent
   "helpdesk_team_name": "Kundendienst", // optional; language-dependent default
   "accounting_app": "full",       // "full" (account_accountant, Enterprise) | "invoicing"
+  "customer_profile": { ... },    // optional; business reasoning + relatability check
   "partners": [ ... ],
   "products": [ ... ],
   "boms": [ ... ],
@@ -247,6 +248,54 @@ Source of truth: `engine/volume.py` (`RECOMMENDED_VOLUME`).
 Spread invoices/orders across several months and mix customer and vendor
 documents; vary partner countries, individual contacts (`is_company: false`)
 and pipeline stages so the demo looks realistic rather than uniform.
+
+## Compact tables (token-saving, optional)
+
+Every list-of-records section (`partners`, `products`, `invoices`, `example_orders`,
+`boms`, …) and every nested `lines` list may be written as a **table** instead of
+a list of objects: the first element is a header row of field names, the rest are
+value rows of equal length. The repeated keys disappear, the parsed result is
+identical. Values keep their JSON type. Both forms can be mixed freely, also
+between sections.
+
+```jsonc
+"partners": [
+  ["xml_id", "name", "country_xmlid", "street", "city", "zip", "vat"],
+  ["p_c1", "Autohaus Vogel GmbH", "base.de", "Karlstrasse 100", "Karlsruhe", "76133", "DE305918243"],
+  ["p_c2", "Brauerei Durlacher GmbH", "base.de", "Allee 12", "Karlsruhe", "76131", "DE128450379"]
+],
+"example_orders": [
+  {"xml_id": "so1", "partner_xmlid": "p_c1", "state": "sent",
+   "lines": [["product_xmlid", "qty", "description"],
+             ["product_fin_shirt", 120.0, "T-Shirt bedruckt"]]}
+]
+```
+
+The header names are validated against the record's dataclass (unknown column ->
+error); a row with a different number of values than the header -> error. Only
+fields present in the header are set - omitted optional fields use their defaults.
+Use it for the bulky, repetitive sections; keep the verbose form where it reads
+better.
+
+## `customer_profile` (optional)
+
+Free-form metadata about the customer's business, captured once so it can be
+re-read cheaply and used to keep the demo data customer-specific. It generates
+**no** Odoo records.
+
+| Field | Note |
+|---|---|
+| `industry` | e.g. "Werbemittelhandel" |
+| `business_model` | e.g. "B2B Full-Service von Beschaffung bis Logistik" |
+| `product_domains` | list of domain terms; drives the relatability check |
+| `customer_segments` | list, e.g. ["Mittelstand", "Handwerk"] |
+| `region` | e.g. "Karlsruhe" |
+
+`product_domains` feeds `check_spec_relatability` (`engine/validate.py`): a
+`generate` run warns when the profile names domains but **no** product
+name/description matches any term (the catalog looks generic/copied). A leftover
+scaffold placeholder (`TODO`) anywhere in the spec is an **error** that stops the
+build.
 
 ## What static validation rejects
 

@@ -720,6 +720,23 @@ class Module:
 
 
 @dataclass
+class CustomerProfile:
+    """Optional metadata: the reasoning about the customer's business.
+
+    Captured once so it can be re-read cheaply (no repeat research) and used to
+    keep the demo data customer-specific. It generates **no** Odoo records -
+    ``product_domains`` only drives the relatability check in
+    ``engine/validate.py``.
+    """
+
+    industry: str | None = None
+    business_model: str | None = None
+    product_domains: list[str] = field(default_factory=list)
+    customer_segments: list[str] = field(default_factory=list)
+    region: str | None = None
+
+
+@dataclass
 class CustomerSpec:
     module: Module
     company: Company
@@ -763,6 +780,10 @@ class CustomerSpec:
     # mail_enterprise - so not automatically in a fresh DB (see
     # verified-patterns.md 4.15).
     accounting_app: str = "full"
+    # Optional customer profile (see CustomerProfile). Metadata only; it is not
+    # rendered to Odoo XML. `product_domains` feeds the relatability check in
+    # engine/validate.py.
+    customer_profile: CustomerProfile | None = None
 
     def __post_init__(self) -> None:
         if self.accounting_app not in {"full", "invoicing"}:

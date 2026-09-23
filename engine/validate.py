@@ -8,12 +8,13 @@ for that see skills/odoo-demo-data/reference/install-test-protocol.md.
 from __future__ import annotations
 
 import ast
+import dataclasses
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
-from .model import SAFE_PURCHASE_ORDER_STATES, SAFE_SALE_ORDER_STATES
+from .model import CustomerSpec, SAFE_PURCHASE_ORDER_STATES, SAFE_SALE_ORDER_STATES
 
 # Known Odoo core/enterprise namespaces from which "foreign" xmlids may come.
 # Anything else outside the module itself is flagged as a warning,
@@ -366,3 +367,82 @@ def _luhn_checksum(number: str) -> int:
     total = sum(digits[::2])
     total += sum(sum(divmod(d * 2, 10)) for d in digits[1::2])
     return total % 10
+
+
+# ---------------------------------------------------------------------------
+# Relatability guardrail (spec-level; no Odoo kernel needed)
+# ---------------------------------------------------------------------------
+#
+# The demo data must be specified *on the customer* (AGENTS.md): copy-and-edit is
+# a shape shortcut, not a content shortcut. These checks catch the two ways that
+# goes wrong - leftover scaffold placeholders and a catalog that has nothing to do
+# with the customer's stated product domains.
+
+_PLACEHOLDER_RE = re.compile(r"\bTODO\b")
+
+
+def check_spec_relatability(spec: CustomerSpec) -> list[Finding]:
+    """Checks that the demo data is customer-specific.
+
+    - **error**: a leftover scaffold placeholder ("TODO") anywhere in the spec.
+    - **warning**: ``customer_profile.product_domains`` is set, but no product
+      name/description matches any domain term (the catalog looks generic/copied).
+
+    Backward compatible: without ``customer_profile`` and without placeholders it
+    returns no findings.
+    """
+    findings: list[Finding] = []
+    for path, value in _iter_strings(spec):
+        if _PLACEHOLDER_RE.search(value):
+            findings.append(Finding(
+                "error",
+                f"spec: {path} still contains the scaffold placeholder {value!r} - "
+                f"fill in customer-specific content before delivery.",
+            ))
+
+    profile = spec.customer_profile
+    if profile and profile.product_domains and spec.products:
+        words = _domain_words(profile.product_domains)
+        if words:
+            matched = any(
+                any(
+                    word in _normalise(p.name + " " + (p.description_sale or ""))
+                    for word in words
+                )
+                for p in spec.products
+            )
+            if not matched:
+                findings.append(Finding(
+                    "warning",
+                    "customer_profile.product_domains is set, but no product name/"
+                    "description matches any domain term - the catalog may be generic "
+                    "or copied from another customer. Make the products reflect the "
+                    "customer's business.",
+                ))
+    return findings
+
+
+def _iter_strings(obj, path: str = "spec"):
+    """Yield (path, value) for every string in a (nested) dataclass instance."""
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        for f in dataclasses.fields(obj):
+            yield from _iter_strings(getattr(obj, f.name), f"{path}.{f.name}")
+    elif isinstance(obj, (list, tuple)):
+        for i, item in enumerate(obj):
+            yield from _iter_strings(item, f"{path}[{i}]")
+    elif isinstance(obj, str):
+        yield path, obj
+
+
+def _domain_words(domains: list[str]) -> set[str]:
+    """Split domain phrases into meaningful lowercase terms (>= 4 chars)."""
+    words: set[str] = set()
+    for domain in domains:
+        for word in re.split(r"[^\w]+", domain.lower()):
+            if len(word) >= 4:
+                words.add(word)
+    return words
+
+
+def _normalise(text: str) -> str:
+    return text.lower()

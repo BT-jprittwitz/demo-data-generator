@@ -36,7 +36,8 @@ knowledge lives in `reference/`.
    model and reason about which processes matter - including adjacent ones (e.g.
    medical devices -> quality control, batch/lot traceability). Then pick
    capability bundles from `reference/capabilities.md` (menu with "relevant when"
-   hints; live via `python3 -m engine.cli capabilities`). Dependencies are closed
+   hints; live via `python3 -m engine.cli capabilities`, compact for tooling via
+   `... capabilities --json`). Dependencies are closed
    automatically (e.g. `mrp` pulls the warehouse and the product catalog). There is
    **no fixed industry profile** (`ROADMAP.md`, principle "No fixed industry
    verticals"). Section/field details: `reference/spec-format.md`.
@@ -52,6 +53,12 @@ knowledge lives in `reference/`.
    `reference/spec-format.md`. Aim for the recommended "rich demo" volume per
    used section (`reference/spec-format.md`, "Recommended data volume") - the
    generator warns below it.
+
+   Token savers: write repetitive sections as **compact tables** (header row +
+   value rows, see `reference/spec-format.md`) and capture the business reasoning
+   once in an optional **`customer_profile`**. The content must stay
+   customer-specific: `generate` errors on a leftover scaffold `TODO` and warns
+   when the catalog does not match the profile's `product_domains`.
 3. **Generate** (static validation runs automatically, no ZIP is built on errors):
    ```bash
    python3 -m engine.cli generate --spec examples/<customer>.json --out output

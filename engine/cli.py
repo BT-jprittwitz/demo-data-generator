@@ -12,12 +12,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from .builder import write_module_dir, zip_module_dir
-from .bundles import BundleError, render_capabilities_markdown, validate_bundles
+from .bundles import BundleError, capabilities_data, render_capabilities_markdown, validate_bundles
 from .model import SpecError
 from .scaffold import build_skeleton, to_json
 from .schema import write_schema
 from .spec_loader import load_spec
-from .validate import validate_module
+from .validate import check_spec_relatability, validate_module
 from .volume import check_data_volume
 
 
@@ -40,6 +40,10 @@ def cmd_generate(args: argparse.Namespace) -> int:
     module_dir = write_module_dir(spec, out_dir)
 
     findings = validate_module(module_dir)
+
+    # Spec-level relatability guardrail (placeholders, generic catalog) - see
+    # engine/validate.py check_spec_relatability.
+    findings = check_spec_relatability(spec) + findings
     errors = [f for f in findings if f.level == "error"]
     for f in findings:
         print(f, file=sys.stderr if f.level == "error" else sys.stdout)
@@ -129,6 +133,9 @@ def cmd_capabilities(args: argparse.Namespace) -> int:
         print(f"bundle definition problem: {problem}", file=sys.stderr)
     if problems:
         return 1
+    if args.json:
+        print(json.dumps({"bundles": capabilities_data()}, ensure_ascii=False, separators=(",", ":")))
+        return 0
     markdown = render_capabilities_markdown()
     if args.out:
         Path(args.out).write_text(markdown, encoding="utf-8")
@@ -158,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p_caps = sub.add_parser("capabilities", help="Show/generate the capability-bundle catalog (skill reference)")
     p_caps.add_argument("--out", help="Write the markdown to this file instead of stdout")
+    p_caps.add_argument("--json", action="store_true", help="Emit the catalog as compact JSON")
     p_caps.set_defaults(func=cmd_capabilities)
 
     p_new = sub.add_parser("new", help="Scaffold a customer spec skeleton from capability bundles")
