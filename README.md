@@ -33,7 +33,10 @@ python3 -m engine.cli generate --spec examples/muster_foerdertechnik.json --out 
 
 Builds `output/<technical_name>/` (module directory) and `output/<technical_name>.zip`.
 Static validation (`engine/validate.py`) runs automatically before zipping; on
-errors no ZIP is built (`--force` forces it anyway, not recommended).
+errors no ZIP is built (`--force` forces it anyway, not recommended). The run also
+warns when a used section is below the recommended "rich demo" volume
+(`engine/volume.py`, see `skills/odoo-demo-data/reference/spec-format.md`) - a
+warning never blocks the build.
 
 Check an existing module (directory or ZIP) independently:
 
@@ -94,6 +97,7 @@ engine/
   manifest.py       __manifest__.py / hooks.py rendering
   builder.py        assemble module directory + ZIP
   validate.py       static check of a built module (no Odoo kernel needed)
+  volume.py         recommended minimum demo-data volume per object type
   verify.py         spec-aware Postgres assertions for the install smoke test
   cli.py            CLI (generate / validate / spec-schema)
   spec/spec.schema.json  generated JSON schema of the customer specification

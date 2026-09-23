@@ -18,6 +18,7 @@ from .scaffold import build_skeleton, to_json
 from .schema import write_schema
 from .spec_loader import load_spec
 from .validate import validate_module
+from .volume import check_data_volume
 
 
 def cmd_generate(args: argparse.Namespace) -> int:
@@ -31,6 +32,9 @@ def cmd_generate(args: argparse.Namespace) -> int:
     except json.JSONDecodeError as e:
         print(f"{spec_path}: not valid JSON ({e})", file=sys.stderr)
         return 1
+
+    for finding in check_data_volume(spec):
+        print(finding, file=sys.stderr if finding.level == "error" else sys.stdout)
 
     out_dir = Path(args.out)
     module_dir = write_module_dir(spec, out_dir)

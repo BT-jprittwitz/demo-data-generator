@@ -49,7 +49,9 @@ knowledge lives in `reference/`.
    Then fill the sections with real content. Either example spec also works as a
    template: `examples/muster_foerdertechnik.json` (manufacturing) or
    `examples/muster_handel.json` (multi-app/Enterprise). All fields:
-   `reference/spec-format.md`.
+   `reference/spec-format.md`. Aim for the recommended "rich demo" volume per
+   used section (`reference/spec-format.md`, "Recommended data volume") - the
+   generator warns below it.
 3. **Generate** (static validation runs automatically, no ZIP is built on errors):
    ```bash
    python3 -m engine.cli generate --spec examples/<customer>.json --out output
@@ -73,6 +75,7 @@ engine/
   manifest.py      __manifest__.py / hooks.py (company visibility, invoice posting)
   builder.py       module directory + ZIP
   validate.py      static check of the known landmines (no Odoo needed)
+  volume.py        recommended minimum demo-data volume per object type
   verify.py        spec-aware Postgres assertions for the install smoke test
   cli.py           CLI (generate / validate)
 examples/          example specifications

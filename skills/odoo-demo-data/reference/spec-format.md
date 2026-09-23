@@ -215,6 +215,39 @@ default `month`), `state` (default `draft`; only draft/sent), optional
 Products should set `recurring_invoice: true` so the lines become recurring.
 See verified-patterns 4.25.
 
+## Recommended data volume ("rich demo" tier)
+
+The generator emits exactly the records in the spec; there is no built-in
+volume. For a convincing demo, aim for at least these counts per object type
+(the engine warns below them, but never blocks the build). Only sections that
+are already used are checked, so a deliberately omitted section never warns.
+Source of truth: `engine/volume.py` (`RECOMMENDED_VOLUME`).
+
+| Section | Minimum |
+|---|---|
+| `partners` | 30 |
+| `products` | 25 |
+| `invoices` | 10 |
+| `crm_leads` | 15 |
+| `purchase_orders` | 10 |
+| `example_orders` (incl. `quotation`) | 12 |
+| `helpdesk_tickets` | 12 |
+| `quotation_templates` | 4 |
+| `projects` | 3 |
+| `project_tasks` | 12 |
+| `manufacturing_orders` | 8 |
+| `stock_quants` | 10 |
+| `subscriptions` | 6 |
+| `maintenance_equipment` | 6 |
+| `maintenance_requests` | 8 |
+| `quality_points` | 4 |
+| `quality_checks` | 6 |
+| `quality_alerts` | 4 |
+
+Spread invoices/orders across several months and mix customer and vendor
+documents; vary partner countries, individual contacts (`is_company: false`)
+and pipeline stages so the demo looks realistic rather than uniform.
+
 ## What static validation rejects
 
 `engine/validate.py` + `engine/model.py` enforce among other things: unknown

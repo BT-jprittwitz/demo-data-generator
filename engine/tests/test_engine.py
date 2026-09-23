@@ -44,6 +44,7 @@ from engine.manifest import DEMO_USER_LOGIN, DEMO_USER_PASSWORD, depends, render
 from engine.schema import build_schema
 from engine.spec_loader import load_spec
 from engine.validate import _is_valid_at_uid, _is_valid_de_vat, validate_module
+from engine.volume import RECOMMENDED_VOLUME, check_data_volume
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE_SPEC_PATH = REPO_ROOT / "examples" / "muster_foerdertechnik.json"
@@ -189,6 +190,60 @@ class BuilderAndValidateTests(unittest.TestCase):
             )
             findings = validate_module(module_dir)
             self.assertTrue(any("4.3" in f.message for f in findings))
+
+
+class DataVolumeTests(unittest.TestCase):
+    """Recommended "rich demo" volume per used section (engine/volume.py)."""
+
+    def _partners(self, count: int) -> list[Partner]:
+        return [
+            Partner(xml_id=f"p{i}", name=f"Kunde {i}", country_xmlid="base.ch",
+                    street="Weg 1", city="Stadt", zip="1234", customer_rank=1)
+            for i in range(count)
+        ]
+
+    def test_warns_below_recommended_volume(self):
+        findings = check_data_volume(_minimal_spec(partners=self._partners(2)))
+        self.assertTrue(any(f.level == "warning" and f.message.startswith("partners:")
+                            for f in findings))
+
+    def test_empty_section_does_not_warn(self):
+        findings = check_data_volume(_minimal_spec())
+        self.assertFalse(any(f.message.startswith("partners:") for f in findings))
+
+    def test_no_warning_at_recommended_volume(self):
+        spec = _minimal_spec(
+            partners=self._partners(RECOMMENDED_VOLUME["partners"]),
+            products=[
+                Product(xml_id=f"prod{i}", name=f"Produkt {i}", type="consu",
+                        sale_ok=True, purchase_ok=False, standard_price=1.0)
+                for i in range(RECOMMENDED_VOLUME["products"])
+            ],
+        )
+        self.assertEqual(check_data_volume(spec), [])
+
+    def test_quotation_counts_towards_example_orders(self):
+        quotation = SaleOrder(xml_id="q1", partner_xmlid="p0", lines=[
+            SaleOrderLine(product_xmlid="prod_a", qty=1.0, description="x"),
+        ])
+        below = check_data_volume(_minimal_spec(partners=self._partners(1), quotation=quotation))
+        self.assertTrue(any(f.message.startswith("example_orders:") for f in below))
+
+        orders = [
+            SaleOrder(xml_id=f"so{i}", partner_xmlid="p0", lines=[
+                SaleOrderLine(product_xmlid="prod_a", qty=1.0, description="x"),
+            ])
+            for i in range(RECOMMENDED_VOLUME["example_orders"] - 1)
+        ]
+        at = check_data_volume(_minimal_spec(
+            partners=self._partners(1), quotation=quotation, example_orders=orders,
+        ))
+        self.assertFalse(any(f.message.startswith("example_orders:") for f in at))
+
+    def test_findings_are_warnings_never_errors(self):
+        findings = check_data_volume(_minimal_spec(partners=self._partners(1)))
+        self.assertTrue(findings)
+        self.assertTrue(all(f.level == "warning" for f in findings))
 
 
 class ErpBlockTests(unittest.TestCase):
