@@ -14,14 +14,18 @@ Principles:
 
 ## Version / branch strategy
 
-- **`19.0`** (renamed from `main`): the verified Odoo **19.0** line - generator
-  engine plus the Enterprise install smoke-test harness. This is what delivered
-  demo packages are built and tested against today; kept stable, changes only as
-  fixes/backports.
+- **`19.0`**: the verified Odoo **19.0** line - generator engine plus the
+  Enterprise install smoke-test harness. This is what delivered demo packages are
+  built and tested against today; kept stable, changes only as fixes/backports.
+- **`main`**: the repository's default branch. As long as there is no Odoo 20
+  line, it simply fast-forwards to `19.0` after each change, so the default branch
+  always reflects the current state. Odoo 20 was originally planned directly on
+  `main`, but the v20 source is not released yet.
 - **`20.0`** (branched from `19.0`): the new development trunk for Odoo **20**.
   First step is the install smoke-test harness against a local Odoo 20 instance;
   the verified patterns are ported/verified against the Odoo 20 source afterwards.
-  Intended as the GitHub default branch once the harness runs.
+  Once the harness runs, `20.0` becomes the development trunk and `main` follows
+  it instead of `19.0`.
 
 ## End goal
 
